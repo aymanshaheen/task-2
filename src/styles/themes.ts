@@ -1,0 +1,16 @@
+import { semanticColors } from "./colors";
+
+export const themes = {
+  light: {
+    background: { backgroundColor: semanticColors.light.background },
+    text: { color: semanticColors.light.text },
+    card: { backgroundColor: semanticColors.light.surface },
+    colors: semanticColors.light,
+  },
+  dark: {
+    background: { backgroundColor: semanticColors.dark.background },
+    text: { color: semanticColors.dark.text },
+    card: { backgroundColor: semanticColors.dark.surface },
+    colors: semanticColors.dark,
+  },
+} as const;
