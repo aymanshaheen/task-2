@@ -131,7 +131,7 @@ export const NoteEditor = ({
         <Text style={[styles.counter, { color: c.muted }]}>
           {wordCount} words • {charCount} chars
         </Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: "row", gap: spacing.s8 }}>
           <TouchableOpacity
             onPress={onClose}
             style={[

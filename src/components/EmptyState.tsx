@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "../hooks/useTheme";
 import { typography } from "../styles/typography";
+import { spacing } from "../styles/spacing";
 
 type Props = {
   message: string;
@@ -22,7 +23,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.s24,
   },
   emptyStateText: {
     fontSize: typography.size.md,

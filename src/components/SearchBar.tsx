@@ -27,21 +27,19 @@ export const SearchBar = memo(
           placeholder="Search notes..."
           value={value}
           onChangeText={onChangeText}
-          style={[styles.input, { color: isDark ? c.muted : c.text }]}
+          style={[styles.input, { color: c.text }]}
           autoCapitalize="none"
           placeholderTextColor={c.placeholder}
         />
-        <TouchableOpacity
-          accessibilityLabel="Sort"
-          onPress={onPressFilter}
-          style={styles.filterButton}
-        >
-          <Text
-            style={[styles.filterIcon, { color: isDark ? c.muted : c.text }]}
+        {onPressFilter && (
+          <TouchableOpacity
+            accessibilityLabel="Sort"
+            onPress={onPressFilter}
+            style={styles.filterButton}
           >
-            ⇅
-          </Text>
-        </TouchableOpacity>
+            <Text style={[styles.filterIcon, { color: c.text }]}>⇅</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }

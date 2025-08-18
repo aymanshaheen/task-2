@@ -17,35 +17,110 @@ setValue(value + 1);
 clear();
 ```
 
+### useAuth
+
+- **purpose**: Manage authentication state with session persistence
+- **provider**: Must wrap app with `AuthProvider`
+- **returns**: `{ user, isAuthenticated, loading, login, signup, logout }`
+- **types**:
+  - **user**: `AuthUser | null` where `AuthUser = { id: string, email: string }`
+  - **isAuthenticated**: boolean
+  - **loading**: boolean
+  - **login**: `(email: string, password: string) => Promise<void>`
+  - **signup**: `(email: string, password: string) => Promise<void>`
+  - **logout**: `() => Promise<void>`
+
+```tsx
+// App setup
+import { AuthProvider } from "./src/hooks/useAuth";
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Main />
+    </AuthProvider>
+  );
+}
+
+// In components
+import { useAuth } from "./src/hooks/useAuth";
+
+function LoginScreen() {
+  const { login, loading, isAuthenticated } = useAuth();
+
+  const handleLogin = async () => {
+    try {
+      await login("user@example.com", "password");
+    } catch (error) {
+      // Handle error
+    }
+  };
+
+  if (isAuthenticated) {
+    return <DashboardScreen />;
+  }
+
+  return (
+    <View>
+      <Button title="Login" onPress={handleLogin} disabled={loading} />
+    </View>
+  );
+}
+```
+
 ### useNotes
 
 - **purpose**: CRUD for notes stored in AsyncStorage + helpers
 - **returns**:
+
   - **notes**: `Note[]` (sorted pinned first, then by createdAt desc)
-  - **createNote(note)**: create new note
-  - **updateNote(id, updates)**, **deleteNote(id)**
-  - **togglePin(id)**, **toggleFavorite(id)**
-  - **exportJson()** → string, **exportText()** → string
-  - **restoreFromJson(json)** → boolean
-  - **tags**: `string[]`
-  - **loading/saving/error**
+  - **createNote**: `(note: NewNote) => void` - create new note
+  - **updateNote**: `(noteId: string, updates: Partial<Note>) => void`
+  - **deleteNote**: `(noteId: string) => void`
+  - **togglePin**: `(noteId: string) => void`
+  - **toggleFavorite**: `(noteId: string) => void`
+  - **tags**: `string[]` - all unique tags from all notes
+  - **loading**: boolean
+  - **saving**: boolean
+  - **error**: Error | null
+
+- **types**:
+  - **Note**: `{ id, title, content(HTML), author?, tags[], pinned, favorite, createdAt, updatedAt }`
+  - **NewNote**: `Pick<Note, "title" | "content" | "tags" | "author">`
 
 ```tsx
 import { useNotes } from "./src/hooks/useNotes";
 
 export function NotesScreen() {
-  const { notes, createNote, updateNote, deleteNote, toggleFavorite, tags } =
-    useNotes();
+  const {
+    notes,
+    createNote,
+    updateNote,
+    deleteNote,
+    togglePin,
+    toggleFavorite,
+    tags,
+    loading,
+    saving,
+  } = useNotes();
 
-  const add = () =>
+  const addNote = () =>
     createNote({
       title: "Hello",
       content: "<p>World</p>",
       tags: ["demo"],
-      author: "",
+      author: "John Doe",
     });
 
-  return null;
+  const editNote = (id: string) => updateNote(id, { title: "Updated Title" });
+
+  return (
+    <View>
+      {loading && <Text>Loading...</Text>}
+      {saving && <Text>Saving...</Text>}
+      <Button title="Add Note" onPress={addNote} />
+    </View>
+  );
 }
 ```
 
@@ -55,24 +130,49 @@ export function NotesScreen() {
 - **signature**: `useSearch(notes: Note[])`
 - **returns**: `{ query, setQuery, filteredNotes, selectedTags, setSelectedTags }`
 - **behavior**:
-  - query: case-insensitive match against `title` or `content`
-  - tags: note must include all `selectedTags` (AND)
+  - **query**: case-insensitive match against `title` or `content` (HTML stripped)
+  - **tags**: note must include all `selectedTags` (AND operation)
 
 ```tsx
-const { notes } = useNotes();
-const { query, setQuery, filteredNotes, selectedTags, setSelectedTags } =
-  useSearch(notes);
+import { useNotes } from "./src/hooks/useNotes";
+import { useSearch } from "./src/hooks/useSearch";
+
+function SearchableNotesScreen() {
+  const { notes } = useNotes();
+  const { query, setQuery, filteredNotes, selectedTags, setSelectedTags } =
+    useSearch(notes);
+
+  return (
+    <View>
+      <TextInput
+        placeholder="Search notes..."
+        value={query}
+        onChangeText={setQuery}
+      />
+      <TagSelector
+        availableTags={allTags}
+        selectedTags={selectedTags}
+        onChangeSelected={setSelectedTags}
+      />
+      <NotesList notes={filteredNotes} />
+    </View>
+  );
+}
 ```
 
-### ThemeProvider / useTheme
+### useTheme (ThemeProvider)
 
 - **purpose**: App-wide light/dark theme with persistence
-- **usage**: Wrap the app with `ThemeProvider`, read via `useTheme()`
-- **useTheme returns**: `{ theme: "light" | "dark", toggleTheme, themeStyles }`
+- **provider**: Must wrap app with `ThemeProvider`
+- **returns**: `{ theme, toggleTheme, themeStyles }`
+- **types**:
+  - **theme**: `"light" | "dark"`
+  - **toggleTheme**: `() => void`
+  - **themeStyles**: `ThemeStyles` - computed styles including colors, background, text, card styles
 
 ```tsx
-// App root
-import { ThemeProvider, useTheme } from "./src/hooks/useTheme";
+// App setup
+import { ThemeProvider } from "./src/hooks/useTheme";
 
 export default function App() {
   return (
@@ -82,11 +182,22 @@ export default function App() {
   );
 }
 
-function Main() {
+// In components
+import { useTheme } from "./src/hooks/useTheme";
+
+function ThemedComponent() {
   const { theme, toggleTheme, themeStyles } = useTheme();
+  const c = themeStyles.colors;
+
   return (
-    <View style={{ flex: 1, backgroundColor: themeStyles.colors.background }}>
-      <Button title={`Switch (${theme})`} onPress={toggleTheme} />
+    <View style={[{ flex: 1 }, themeStyles.background]}>
+      <Text style={[{ fontSize: 18 }, themeStyles.text]}>
+        Current theme: {theme}
+      </Text>
+      <Button title="Toggle Theme" onPress={toggleTheme} />
+      <View style={[{ padding: 16 }, themeStyles.card]}>
+        <Text style={{ color: c.muted }}>Card content</Text>
+      </View>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import React, { memo, useCallback } from "react";
 import { FlatList, View } from "react-native";
+import { spacing } from "../styles/spacing";
 import { NoteCard } from "./NoteCard";
 import type { Note } from "../hooks/useNotes";
 
@@ -31,7 +32,7 @@ export const NotesList: React.FC<Props> = memo(
         data={notes}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ListFooterComponent={<View style={{ height: 96 }} />}
+        ListFooterComponent={<View style={{ height: spacing.s92 }} />}
         removeClippedSubviews
         initialNumToRender={10}
         windowSize={7}

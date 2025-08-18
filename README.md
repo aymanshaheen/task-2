@@ -61,10 +61,12 @@ If you use the Expo app on a physical device, scan the QR code from the terminal
   </tr>
   <tr>
     <td><img src="screenshots/screenshot-07.png" alt="Screenshot 07" width="260" /></td>
-    <td></td>
-    <td></td>
+    <td><img src="screenshots/screenshot-08.png" alt="Screenshot 08" width="260" /></td>
+    <td><img src="screenshots/screenshot-09.png" alt="Screenshot 09" width="260" /></td>
   </tr>
-  
+  <tr>
+    <td><img src="screenshots/screenshot-10.png" alt="Screenshot 10" width="260" /></td>
+    <td><img src="screenshots/screenshot-11.png" alt="Screenshot 11" width="260" /></td>
+    <td><img src="screenshots/screenshot-12.png" alt="Screenshot 12" width="260" /></td>
+  </tr>
 </table>
-
-

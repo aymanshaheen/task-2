@@ -10,6 +10,7 @@ import {
   Easing,
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
+import { useNavigation } from "@react-navigation/native";
 import { formatRelativeTime } from "../utils/dateHelpers";
 import { globalStyles } from "../styles/globalStyles";
 import { spacing } from "../styles/spacing";
@@ -40,6 +41,7 @@ type Props = {
 export const NoteCard = memo(
   ({ note, onUpdate, onDelete, onToggleFavorite }: Props) => {
     const { themeStyles } = useTheme();
+    const navigation = useNavigation<any>();
     const mountProgress = useRef(new Animated.Value(0)).current;
     useEffect(() => {
       Animated.timing(mountProgress, {
@@ -132,9 +134,19 @@ export const NoteCard = memo(
                 style={[styles.title, { color: themeStyles.colors.text }]}
               />
             ) : (
-              <Text style={[styles.title, { color: themeStyles.colors.text }]}>
-                {note.title || "Untitled"}
-              </Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() =>
+                  navigation.navigate("NoteDetails", { id: note.id })
+                }
+                style={{ flex: 1 }}
+              >
+                <Text
+                  style={[styles.title, { color: themeStyles.colors.text }]}
+                >
+                  {note.title || "Untitled"}
+                </Text>
+              </TouchableOpacity>
             )}
             <View style={styles.actions}>
               <TouchableOpacity
@@ -190,12 +202,19 @@ export const NoteCard = memo(
               style={[styles.content, { color: themeStyles.colors.text }]}
             />
           ) : (
-            <Text
-              numberOfLines={6}
-              style={[styles.content, { color: themeStyles.colors.text }]}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                navigation.navigate("NoteDetails", { id: note.id })
+              }
             >
-              {note.content.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ")}
-            </Text>
+              <Text
+                numberOfLines={6}
+                style={[styles.content, { color: themeStyles.colors.text }]}
+              >
+                {note.content.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ")}
+              </Text>
+            </TouchableOpacity>
           )}
           {isEditing && (
             <TextInput
