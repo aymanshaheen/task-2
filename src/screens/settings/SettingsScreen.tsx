@@ -5,7 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { SettingsToggleCard } from "../../components/SettingsToggleCard";
+import { SettingsToggleCard } from "../../components/common/SettingsToggleCard";
 import { useAsyncStorage } from "../../hooks/useAsyncStorage";
 
 export function SettingsScreen() {

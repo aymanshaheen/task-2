@@ -4,8 +4,8 @@ import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { Card } from "../../components/Card";
-import { SectionTitle } from "../../components/SectionTitle";
+import { Card } from "../../components/common/Card";
+import { SectionTitle } from "../../components/common/SectionTitle";
 
 export function HelpScreen() {
   const { themeStyles } = useTheme();

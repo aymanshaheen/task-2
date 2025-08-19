@@ -19,6 +19,9 @@ export const palette = {
   red400: "#FCA5A5",
   red500: "#D12C2C",
   red700: "#7F1D1D",
+
+  yellow400: "#FBBF24",
+  yellow500: "#F59E0B",
 } as const;
 
 export type Palette = typeof palette;
@@ -40,6 +43,7 @@ export const semanticColors = {
     dangerBg: "#FEE2E2",
     dangerBorder: palette.red400,
     dangerText: palette.red700,
+    warning: palette.yellow500,
     tabActiveBg: palette.gray100,
     placeholder: palette.gray500,
     black: palette.black,
@@ -62,6 +66,7 @@ export const semanticColors = {
     dangerBg: palette.gray700,
     dangerBorder: palette.gray600,
     dangerText: palette.white,
+    warning: palette.yellow400,
     tabActiveBg: palette.gray600,
     placeholder: palette.gray400,
     black: palette.black,

@@ -5,9 +5,9 @@ import { globalStyles } from "../../styles/globalStyles";
 import { useNotes } from "../../hooks/useNotes";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { Card } from "../../components/Card";
-import { SectionTitle } from "../../components/SectionTitle";
-import { KeyValueRow } from "../../components/KeyValueRow";
+import { Card } from "../../components/common/Card";
+import { SectionTitle } from "../../components/common/SectionTitle";
+import { KeyValueRow } from "../../components/common/KeyValueRow";
 import { formatRelativeTime } from "../../utils/dateHelpers";
 
 export function StatsScreen() {
@@ -16,15 +16,19 @@ export function StatsScreen() {
 
   const stats = useMemo(() => {
     const total = notes.length;
-    const favorites = notes.filter((n) => n.favorite).length;
-    const pinned = notes.filter((n) => n.pinned).length;
+    const favorites = notes.filter((n) => n.isFavorite).length;
+    const pinned = 0; // Pinned feature not implemented yet
     const tagsSet = new Set<string>();
-    notes.forEach((n) => n.tags.forEach((t) => tagsSet.add(t)));
+    notes.forEach((n) => n.tags?.forEach((t) => tagsSet.add(t)));
 
     // compute additional insights
     const lastUpdated = notes.reduce<number | null>((acc, n) => {
-      if (acc == null) return n.updatedAt;
-      return Math.max(acc, n.updatedAt);
+      const updatedTime =
+        typeof n.updatedAt === "string"
+          ? new Date(n.updatedAt).getTime()
+          : n.updatedAt;
+      if (acc == null) return updatedTime;
+      return Math.max(acc, updatedTime);
     }, null);
 
     // approximate word counts from HTML content
@@ -45,12 +49,13 @@ export function StatsScreen() {
 
     const avgTags = total
       ? Math.round(
-          (notes.reduce((sum, n) => sum + n.tags.length, 0) / total) * 10
+          (notes.reduce((sum, n) => sum + (n.tags?.length || 0), 0) / total) *
+            10
         ) / 10
       : 0;
     const tagCount: Record<string, number> = {};
     notes.forEach((n) => {
-      n.tags.forEach((t) => {
+      n.tags?.forEach((t) => {
         tagCount[t] = (tagCount[t] || 0) + 1;
       });
     });

@@ -14,6 +14,7 @@ import { HelpScreen } from "../screens/settings/HelpScreen";
 import { useTheme } from "../hooks/useTheme";
 import { NoteDetailsScreen } from "../screens/notes/NoteDetailsScreen";
 import { SearchScreen } from "../screens/notes/SearchScreen";
+import { AddNoteScreen } from "../screens/notes/AddNoteScreen";
 import { spacing } from "../styles/spacing";
 import { typography } from "../styles/typography";
 
@@ -24,6 +25,7 @@ export type DrawerParamList = {
   Help: undefined;
   NoteDetails: { id: string } | undefined;
   Search: undefined;
+  AddNote: { noteId?: string } | undefined;
 };
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -169,6 +171,15 @@ export function DrawerNavigator() {
         component={NoteDetailsScreen}
         options={{
           title: "Note",
+          drawerLabel: () => null,
+          drawerItemStyle: { height: 0 },
+        }}
+      />
+      <Drawer.Screen
+        name="AddNote"
+        component={AddNoteScreen}
+        options={{
+          title: "Add Note",
           drawerLabel: () => null,
           drawerItemStyle: { height: 0 },
         }}

@@ -5,7 +5,7 @@ import { useNotes } from "../../hooks/useNotes";
 import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
-import { NoteDetailsCard } from "../../components/NoteDetailsCard";
+import { NoteDetailsCard } from "../../components/notes/NoteDetailsCard";
 
 type RouteParams = { id: string };
 

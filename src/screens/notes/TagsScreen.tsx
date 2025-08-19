@@ -1,16 +1,20 @@
 import React, { useMemo, useState } from "react";
 import { SafeAreaView, StatusBar } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useNotes } from "../../hooks/useNotes";
 import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
-import { NotesList } from "../../components/NotesList";
+import { NotesList } from "../../components/notes/NotesList";
 import { spacing } from "../../styles/spacing";
-import { TagFilterChips } from "../../components/TagFilterChips";
-import { FloatingActionButton } from "../../components/FloatingActionButton";
-import { ComposerSheet } from "../../components/ComposerSheet";
-import { NoteEditor } from "../../components/NoteEditor";
+import { TagFilterChips } from "../../components/common/TagFilterChips";
+import { FloatingActionButton } from "../../components/common/FloatingActionButton";
+import { NetworkSnackbar } from "../../components/common/NetworkSnackbar";
+import { SavingToast } from "../../components/common/SavingToast";
+import { LoadingState } from "../../components/common/LoadingState";
+import { ErrorText } from "../../components/common/ErrorText";
 
 export function TagsScreen() {
+  const navigation = useNavigation();
   const { theme, themeStyles } = useTheme();
   const {
     notes,
@@ -20,13 +24,16 @@ export function TagsScreen() {
     deleteNote,
     togglePin,
     toggleFavorite,
+    error,
+    loading,
+    saving,
+    isOffline,
   } = useNotes();
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [showComposer, setShowComposer] = useState(false);
 
   const list = useMemo(() => {
     if (!activeTag) return notes;
-    return notes.filter((n) => n.tags.includes(activeTag));
+    return notes.filter((n) => n.tags?.includes(activeTag) || false);
   }, [notes, activeTag]);
 
   return (
@@ -40,35 +47,30 @@ export function TagsScreen() {
       <StatusBar
         barStyle={theme === "dark" ? "light-content" : "dark-content"}
       />
+
+      {error && <ErrorText message={error.message} />}
       <TagFilterChips
         tags={tags}
         activeTag={activeTag}
         onToggle={(t) => setActiveTag((prev) => (prev === t ? null : t))}
       />
-      <NotesList
-        notes={list}
-        onUpdate={updateNote}
-        onDelete={deleteNote}
-        onTogglePin={togglePin}
-        onToggleFavorite={toggleFavorite}
-      />
+      {loading ? (
+        <LoadingState />
+      ) : (
+        <NotesList
+          notes={list}
+          onUpdate={updateNote}
+          onDelete={deleteNote}
+          onTogglePin={togglePin}
+          onToggleFavorite={toggleFavorite}
+        />
+      )}
+      <SavingToast visible={!!saving && !loading} />
       <FloatingActionButton
         accessibilityLabel="Add note"
-        onPress={() => setShowComposer(true)}
+        onPress={() => navigation.navigate("AddNote" as never)}
       />
-      {showComposer && (
-        <ComposerSheet title="Add Message">
-          <NoteEditor
-            visible
-            onSave={(payload) => {
-              createNote(payload);
-            }}
-            onClose={() => setShowComposer(false)}
-            showAuthor={false}
-            showTags
-          />
-        </ComposerSheet>
-      )}
+      <NetworkSnackbar />
     </SafeAreaView>
   );
 }

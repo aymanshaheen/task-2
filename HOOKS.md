@@ -202,3 +202,265 @@ function ThemedComponent() {
   );
 }
 ```
+
+### useNetworkStatus
+
+- **purpose**: Monitor network connectivity and connection quality with throttled updates
+- **signature**: `useNetworkStatus()`
+- **returns**: `NetworkStatus & NetworkActions`
+- **types**:
+  - **NetworkStatus**: `{ isConnected, isInternetReachable, type, details, connectionQuality }`
+  - **NetworkActions**: `{ refresh, checkReachability }`
+  - **connectionQuality**: `"excellent" | "good" | "poor" | "offline"`
+
+```tsx
+import { useNetworkStatus } from "./src/hooks/useNetworkStatus";
+
+function NetworkAwareComponent() {
+  const {
+    isConnected,
+    isInternetReachable,
+    connectionQuality,
+    type,
+    refresh,
+    checkReachability,
+  } = useNetworkStatus();
+
+  const handleRefresh = async () => {
+    await refresh();
+  };
+
+  const checkGoogle = async () => {
+    const reachable = await checkReachability("https://www.google.com");
+    console.log("Google reachable:", reachable);
+  };
+
+  return (
+    <View>
+      <Text>Connected: {isConnected ? "Yes" : "No"}</Text>
+      <Text>Internet: {isInternetReachable ? "Yes" : "No"}</Text>
+      <Text>Quality: {connectionQuality}</Text>
+      <Text>Type: {type}</Text>
+      <Button title="Refresh" onPress={handleRefresh} />
+    </View>
+  );
+}
+```
+
+### useIsOnline / useIsOffline
+
+- **purpose**: Simplified hooks for basic online/offline detection
+- **signature**: `useIsOnline()` returns `boolean`, `useIsOffline()` returns `boolean`
+
+```tsx
+import { useIsOnline, useIsOffline } from "./src/hooks/useNetworkStatus";
+
+function SimpleNetworkComponent() {
+  const isOnline = useIsOnline();
+  const isOffline = useIsOffline();
+
+  return (
+    <View>
+      {isOffline && <Text>You are offline</Text>}
+      {isOnline && <Text>You are online</Text>}
+    </View>
+  );
+}
+```
+
+### useNetworkAware
+
+- **purpose**: Enhanced network awareness with transition detection
+- **signature**: `useNetworkAware()`
+- **returns**: `NetworkStatus & { isOffline, wasOffline, justCameOnline, justWentOffline }`
+
+```tsx
+import { useNetworkAware } from "./src/hooks/useNetworkStatus";
+
+function NetworkTransitionComponent() {
+  const { isOffline, justCameOnline, justWentOffline, connectionQuality } =
+    useNetworkAware();
+
+  useEffect(() => {
+    if (justCameOnline) {
+      console.log("Network restored! Syncing data...");
+    }
+    if (justWentOffline) {
+      console.log("Network lost! Entering offline mode...");
+    }
+  }, [justCameOnline, justWentOffline]);
+
+  return (
+    <View>
+      {justCameOnline && <Text>🟢 Back online!</Text>}
+      {justWentOffline && <Text>🔴 Gone offline!</Text>}
+    </View>
+  );
+}
+```
+
+### useOfflineErrorHandler
+
+- **purpose**: Handle different types of errors with offline awareness
+- **signature**: `useOfflineErrorHandler()`
+- **returns**: `{ handleError, handleAuthError, handleStorageError, getErrorMessage, isOffline }`
+
+```tsx
+import { useOfflineErrorHandler } from "./src/hooks/useOfflineErrorHandler";
+
+function ErrorAwareComponent() {
+  const { handleError, getErrorMessage, isOffline } = useOfflineErrorHandler();
+
+  const performNetworkOperation = async () => {
+    try {
+      await someApiCall();
+    } catch (error) {
+      const isHandled = handleError(error, {
+        title: "Operation Failed",
+        retryAction: () => performNetworkOperation(),
+      });
+
+      if (!isHandled) {
+        // Handle non-network errors
+        console.log("Error:", getErrorMessage(error));
+      }
+    }
+  };
+
+  return (
+    <Button
+      title="Perform Operation"
+      onPress={performNetworkOperation}
+      disabled={isOffline}
+    />
+  );
+}
+```
+
+### useOfflineIntegration
+
+- **purpose**: Complete offline integration with sync management
+- **signature**: `useOfflineIntegration()`
+- **returns**: `{ isOnline, isOffline, connectionQuality, syncStatus, performSync, handleError, ... }`
+
+```tsx
+import { useOfflineIntegration } from "./src/hooks/useOfflineIntegration";
+
+function OfflineIntegratedScreen() {
+  const {
+    isOnline,
+    isOffline,
+    syncStatus,
+    hasPendingOperations,
+    performSync,
+    handleError,
+  } = useOfflineIntegration();
+
+  const handleManualSync = async () => {
+    if (isOffline) {
+      handleError({ type: "NETWORK_ERROR" });
+      return;
+    }
+
+    try {
+      await performSync();
+    } catch (error) {
+      handleError(error, { title: "Sync Failed" });
+    }
+  };
+
+  return (
+    <View>
+      {isOffline && <Text>📵 Offline Mode</Text>}
+      {hasPendingOperations && (
+        <Text>Pending: {syncStatus.pendingOperations}</Text>
+      )}
+      <Button
+        title="Sync Now"
+        onPress={handleManualSync}
+        disabled={isOffline}
+      />
+    </View>
+  );
+}
+```
+
+### useOfflineAware
+
+- **purpose**: Lightweight offline awareness without sync features
+- **signature**: `useOfflineAware()`
+- **returns**: `{ isOnline, isOffline, connectionQuality, handleError, getErrorMessage }`
+
+```tsx
+import { useOfflineAware } from "./src/hooks/useOfflineIntegration";
+
+function SimpleOfflineComponent() {
+  const { isOffline, handleError } = useOfflineAware();
+
+  const performAction = () => {
+    if (isOffline) {
+      handleError({ type: "OFFLINE_ERROR" });
+      return;
+    }
+    // Perform online action
+  };
+
+  return (
+    <Button
+      title="Perform Action"
+      onPress={performAction}
+      disabled={isOffline}
+    />
+  );
+}
+```
+
+### useNoteFormValidation
+
+- **purpose**: Form validation for note creation/editing
+- **signature**: `useNoteFormValidation()`
+- **returns**: `{ errors, validateForm, clearError }`
+
+```tsx
+import { useNoteFormValidation } from "./src/hooks/useNoteFormValidation";
+
+function NoteFormComponent() {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const { errors, validateForm, clearError } = useNoteFormValidation();
+
+  const handleSave = () => {
+    const isValid = validateForm({ title, content });
+    if (isValid) {
+      // Save the note
+      console.log("Form is valid!");
+    }
+  };
+
+  const handleTitleChange = (text: string) => {
+    setTitle(text);
+    clearError("title");
+  };
+
+  return (
+    <View>
+      <TextInput
+        value={title}
+        onChangeText={handleTitleChange}
+        placeholder="Note title"
+      />
+      {errors.title && <Text style={{ color: "red" }}>{errors.title}</Text>}
+
+      <TextInput
+        value={content}
+        onChangeText={setContent}
+        placeholder="Note content"
+        multiline
+      />
+      {errors.content && <Text style={{ color: "red" }}>{errors.content}</Text>}
+
+      <Button title="Save" onPress={handleSave} />
+    </View>
+  );
+}
+```

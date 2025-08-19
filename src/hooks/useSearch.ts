@@ -8,6 +8,8 @@ export function useSearch(notes: Note[]) {
   const normalizedQuery = query.trim().toLowerCase();
 
   const filteredNotes = useMemo(() => {
+    if (!notes || !Array.isArray(notes)) return [];
+
     return notes.filter((n) => {
       const matchesQuery =
         !normalizedQuery ||
@@ -16,7 +18,7 @@ export function useSearch(notes: Note[]) {
 
       const matchesTags =
         selectedTags.length === 0 ||
-        selectedTags.every((t) => n.tags.includes(t));
+        selectedTags.every((t) => n.tags?.includes(t) || false);
 
       return matchesQuery && matchesTags;
     });

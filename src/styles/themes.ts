@@ -5,6 +5,8 @@ export const themes = {
     background: { backgroundColor: semanticColors.light.background },
     text: { color: semanticColors.light.text },
     card: { backgroundColor: semanticColors.light.surface },
+    offlineIndicator: { backgroundColor: semanticColors.light.warning + "20" },
+    offlineText: { color: semanticColors.light.warning },
     colors: semanticColors.light,
   },
   dark: {
@@ -16,6 +18,8 @@ export const themes = {
       borderColor: semanticColors.dark.border,
       borderWidth: 1,
     },
+    offlineIndicator: { backgroundColor: semanticColors.dark.warning + "20" },
+    offlineText: { color: semanticColors.dark.warning },
     colors: semanticColors.dark,
   },
 } as const;

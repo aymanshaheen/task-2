@@ -5,8 +5,8 @@ import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { Card } from "../../components/Card";
-import { KeyValueRow } from "../../components/KeyValueRow";
+import { Card } from "../../components/common/Card";
+import { KeyValueRow } from "../../components/common/KeyValueRow";
 
 export function ProfileScreen() {
   const { user } = useAuth();

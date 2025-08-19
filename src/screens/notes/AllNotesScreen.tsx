@@ -1,34 +1,28 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   SafeAreaView,
   StatusBar,
-  LayoutAnimation,
   Platform,
   UIManager,
+  StyleSheet,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../../hooks/useTheme";
 import { useNotes } from "../../hooks/useNotes";
 import type { Note } from "../../hooks/useNotes";
 import { useSearch } from "../../hooks/useSearch";
+import { useOfflineIntegration } from "../../hooks/useOfflineIntegration";
 import { globalStyles } from "../../styles/globalStyles";
-import { SortBar } from "../../components/SortBar";
-import { HeaderBar } from "../../components/HeaderBar";
-import { EmptyState } from "../../components/EmptyState";
-import { NotesList } from "../../components/NotesList";
-import { FloatingActionButton } from "../../components/FloatingActionButton";
-import { ComposerSheet } from "../../components/ComposerSheet";
-import { NoteEditor } from "../../components/NoteEditor";
-import { TagSelector } from "../../components/TagSelector";
 import { spacing } from "../../styles/spacing";
-import { typography } from "../../styles/typography";
-import { LoadingState } from "../../components/LoadingState";
-import { ErrorText } from "../../components/ErrorText";
-import { SavingToast } from "../../components/SavingToast";
+import { NotesScreenHeader } from "../../components/notes/NotesScreenHeader";
+import { NotesScreenContent } from "../../components/notes/NotesScreenContent";
+import { NotesScreenActions } from "../../components/notes/NotesScreenActions";
 
 export function AllNotesScreen() {
   useEffect(() => {
     if (
       Platform.OS === "android" &&
+      UIManager &&
       UIManager.setLayoutAnimationEnabledExperimental
     ) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -38,46 +32,83 @@ export function AllNotesScreen() {
   const { theme, themeStyles } = useTheme();
   const {
     notes,
+    loadNotes,
     createNote,
     updateNote,
     deleteNote,
     togglePin,
     toggleFavorite,
+    refreshNotes,
     tags,
     error,
     loading,
+    refreshing,
     saving,
   } = useNotes();
+  const {
+    isOffline,
+    syncStatus,
+    performSync,
+    hasPendingOperations,
+    isSyncing,
+  } = useOfflineIntegration();
   const { query, setQuery, filteredNotes, selectedTags, setSelectedTags } =
     useSearch(notes);
 
-  const [showComposer, setShowComposer] = useState(false);
+  // Fetch notes every time this tab is focused - online or offline
+  useFocusEffect(
+    useCallback(() => {
+      console.log(
+        `📱 AllNotesScreen focused - loading notes (${
+          isOffline ? "offline" : "online"
+        } mode)`
+      );
+      loadNotes();
+    }, [loadNotes, isOffline])
+  );
+
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [sortKey, setSortKey] = useState<"date" | "title" | "favorites">(
     "date"
   );
+  const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
+
+  const handleSortKeyChange = (key: "date" | "title" | "favorites") => {
+    setSortKey(key);
+    setHasUserSelectedSort(true);
+  };
 
   const list = useMemo(() => {
     const copy = [...filteredNotes];
-    copy.sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      if (sortKey === "date") return b.updatedAt - a.updatedAt;
-      if (sortKey === "title")
-        return a.title.localeCompare(b.title, undefined, {
-          sensitivity: "base",
-          numeric: true,
-        });
-      if (a.favorite && !b.favorite) return -1;
-      if (!a.favorite && b.favorite) return 1;
-      return b.updatedAt - a.updatedAt;
-    });
-    return copy;
-  }, [filteredNotes, sortKey]);
 
-  useEffect(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  }, [list]);
+    if (hasUserSelectedSort) {
+      if (sortKey === "title") {
+        copy.sort((a, b) =>
+          a.title.localeCompare(b.title, undefined, {
+            sensitivity: "base",
+            numeric: true,
+          })
+        );
+      } else if (sortKey === "favorites") {
+        copy.sort((a, b) => {
+          if (a.isFavorite && !b.isFavorite) return -1;
+          if (!a.isFavorite && b.isFavorite) return 1;
+          return (
+            new Date(b.updatedAt || new Date().toISOString()).getTime() -
+            new Date(a.updatedAt || new Date().toISOString()).getTime()
+          );
+        });
+      } else if (sortKey === "date") {
+        copy.sort(
+          (a, b) =>
+            new Date(b.updatedAt || new Date().toISOString()).getTime() -
+            new Date(a.updatedAt || new Date().toISOString()).getTime()
+        );
+      }
+    }
+
+    return copy;
+  }, [filteredNotes, sortKey, hasUserSelectedSort]);
 
   return (
     <SafeAreaView
@@ -90,55 +121,42 @@ export function AllNotesScreen() {
       <StatusBar
         barStyle={theme === "dark" ? "light-content" : "dark-content"}
       />
-      <HeaderBar
+
+      <NotesScreenHeader
         query={query}
         onChangeQuery={setQuery}
-        onPressFilter={() => setShowSortOptions((v) => !v)}
-      />
-      {showSortOptions && (
-        <SortBar sortKey={sortKey} onChangeSortKey={setSortKey} />
-      )}
-      <TagSelector
+        showSortOptions={showSortOptions}
+        onToggleSortOptions={() => setShowSortOptions((v) => !v)}
+        sortKey={sortKey}
+        onChangeSortKey={handleSortKeyChange}
         availableTags={tags}
         selectedTags={selectedTags}
-        onChangeSelected={setSelectedTags}
+        onChangeSelectedTags={setSelectedTags}
       />
-      {error && <ErrorText message={error.message} />}
-      {loading ? (
-        <LoadingState />
-      ) : list.length === 0 ? (
-        <EmptyState
-          message={!notes.length ? "No notes yet" : "No results found"}
-        />
-      ) : (
-        <NotesList
-          notes={list as Note[]}
-          onUpdate={updateNote}
-          onDelete={deleteNote}
-          onTogglePin={togglePin}
-          onToggleFavorite={toggleFavorite}
-        />
-      )}
-      <SavingToast visible={!!saving && !loading} />
-      <FloatingActionButton
-        accessibilityLabel="Add note"
-        onPress={() => setShowComposer(true)}
+
+      <NotesScreenContent
+        loading={loading}
+        error={error}
+        notes={list as Note[]}
+        allNotes={notes}
+        refreshing={refreshing}
+        onRefresh={refreshNotes}
+        onUpdate={updateNote}
+        onDelete={deleteNote}
+        onTogglePin={togglePin}
+        onToggleFavorite={toggleFavorite}
+        tintColor={themeStyles.colors.primary}
       />
-      {showComposer && (
-        <ComposerSheet title="Add Message">
-          <NoteEditor
-            visible
-            onSave={(payload) => {
-              createNote(payload);
-              setQuery("");
-              setSelectedTags([]);
-            }}
-            onClose={() => setShowComposer(false)}
-            showAuthor={false}
-            showTags
-          />
-        </ComposerSheet>
-      )}
+
+      <NotesScreenActions
+        saving={saving}
+        loading={loading}
+        isOffline={isOffline}
+        hasPendingOperations={hasPendingOperations}
+        syncStatus={syncStatus}
+      />
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({});
