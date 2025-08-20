@@ -1,5 +1,13 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  NativeSyntheticEvent,
+  TextInputEndEditingEventData,
+  TextInputSubmitEditingEventData,
+} from "react-native";
 import { useTheme } from "../../hooks/useTheme";
 import { ErrorText } from "../common/ErrorText";
 import { spacing } from "../../styles/spacing";
@@ -17,6 +25,12 @@ interface FormFieldProps {
   required?: boolean;
   showCharCount?: boolean;
   minHeight?: number;
+  onEndEditing?: (
+    e: NativeSyntheticEvent<TextInputEndEditingEventData>
+  ) => void;
+  onSubmitEditing?: (
+    e: NativeSyntheticEvent<TextInputSubmitEditingEventData>
+  ) => void;
 }
 
 export function FormField({
@@ -31,6 +45,8 @@ export function FormField({
   required = false,
   showCharCount = false,
   minHeight,
+  onEndEditing,
+  onSubmitEditing,
 }: FormFieldProps) {
   const { themeStyles } = useTheme();
   const c = themeStyles.colors;
@@ -59,6 +75,8 @@ export function FormField({
         maxLength={maxLength}
         multiline={multiline}
         textAlignVertical={multiline ? "top" : "center"}
+        onEndEditing={onEndEditing}
+        onSubmitEditing={onSubmitEditing}
       />
       {error && <ErrorText message={error} />}
       {showCharCount && (

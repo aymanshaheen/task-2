@@ -4,6 +4,10 @@ export interface User {
   name: string;
   createdAt?: string;
   updatedAt?: string;
+  avatarUrl?: string;
+  location?: string;
+  preferences?: Record<string, any>;
+  profileCompleted?: boolean;
 }
 
 export interface AuthUser {
@@ -12,6 +16,10 @@ export interface AuthUser {
   name: string;
   createdAt?: string;
   updatedAt?: string;
+  avatarUrl?: string;
+  location?: string;
+  preferences?: Record<string, any>;
+  profileCompleted?: boolean;
 }
 
 export interface AuthResponse {

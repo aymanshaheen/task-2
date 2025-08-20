@@ -99,7 +99,8 @@ function transformNetInfoState(state: NetInfoState): NetworkStatus {
   };
 }
 
-export function useNetworkStatus(): NetworkStatus & NetworkActions {
+export function useNetworkStatus(): NetworkStatus &
+  NetworkActions & { isInitialized: boolean } {
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus>(
     DEFAULT_NETWORK_STATUS
   );
@@ -178,6 +179,7 @@ export function useNetworkStatus(): NetworkStatus & NetworkActions {
 
   return {
     ...networkStatus,
+    isInitialized,
     refresh,
     checkReachability,
   };
@@ -221,9 +223,22 @@ export function useNetworkAware() {
   const [previouslyOffline, setPreviouslyOffline] = useState(isOffline);
   const [justCameOnline, setJustCameOnline] = useState(false);
   const [justWentOffline, setJustWentOffline] = useState(false);
+  const hasInitializedRef = React.useRef(false);
 
   React.useEffect(() => {
-    // Only trigger state changes when there's an actual transition
+    // Wait until the network status has been initialized with a real value
+    if (!networkStatus.isInitialized) {
+      return;
+    }
+
+    // On the first initialized state, set the baseline without emitting a snackbar event
+    if (!hasInitializedRef.current) {
+      setPreviouslyOffline(isOffline);
+      hasInitializedRef.current = true;
+      return;
+    }
+
+    // Only trigger state changes when there's an actual transition after initialization
     if (isOffline !== previouslyOffline) {
       if (previouslyOffline && !isOffline) {
         // Just came back online
@@ -240,7 +255,7 @@ export function useNetworkAware() {
       }
       setPreviouslyOffline(isOffline);
     }
-  }, [isOffline, previouslyOffline]);
+  }, [networkStatus.isInitialized, isOffline, previouslyOffline]);
 
   return {
     ...networkStatus,

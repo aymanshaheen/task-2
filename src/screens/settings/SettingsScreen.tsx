@@ -1,6 +1,7 @@
 import React from "react";
 import { SafeAreaView, View, Text, TouchableOpacity } from "react-native";
 import { useTheme } from "../../hooks/useTheme";
+import { useNotificationCenter } from "../../hooks/useNotificationCenter";
 import { useAuth } from "../../hooks/useAuth";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
@@ -10,9 +11,10 @@ import { useAsyncStorage } from "../../hooks/useAsyncStorage";
 
 export function SettingsScreen() {
   const { themeStyles, toggleTheme, theme } = useTheme();
+  const { registerIfEnabled } = useNotificationCenter();
   const { logout } = useAuth();
   const { value: notificationsEnabled, setValue: setNotificationsEnabled } =
-    useAsyncStorage<boolean>("settings:notificationsEnabled", true);
+    useAsyncStorage<boolean>("settings:notificationsEnabledV2", false);
   const { value: biometricLock, setValue: setBiometricLock } =
     useAsyncStorage<boolean>("settings:biometricLock", false);
   return (
@@ -36,7 +38,12 @@ export function SettingsScreen() {
         title="Notifications"
         subtitle="Enable push notifications"
         value={!!notificationsEnabled}
-        onValueChange={setNotificationsEnabled}
+        onValueChange={async (enabled) => {
+          setNotificationsEnabled(enabled);
+          if (enabled) {
+            await registerIfEnabled();
+          }
+        }}
       />
 
       <View style={{ height: spacing.s16 }} />

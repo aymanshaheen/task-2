@@ -1,16 +1,42 @@
-import React from "react";
-import { SafeAreaView, View, Text, StyleSheet, Image } from "react-native";
+import React, { useEffect } from "react";
+import { SafeAreaView, View, Text } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
-import { typography } from "../../styles/typography";
 import { Card } from "../../components/common/Card";
-import { KeyValueRow } from "../../components/common/KeyValueRow";
+import { ProfileHeader } from "../../components/profile/ProfileHeader";
+import { ProfileInfo } from "../../components/profile/ProfileInfo";
+import { ProfileActions } from "../../components/profile/ProfileActions";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { cameraService } from "../../services/cameraService";
 
 export function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { themeStyles } = useTheme();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+
+  // Prefer the avatar URL saved locally, otherwise fall back to possible API field names
+  const avatarUrl =
+    (user as any)?.avatarUrl ||
+    (user as any)?.profilePictureUrl ||
+    (user as any)?.profilePicture ||
+    (user as any)?.photoUrl ||
+    (user as any)?.imageUrl;
+
+  useEffect(() => {
+    const selected = (route.params as any)?.selectedLocation as
+      | { latitude: number; longitude: number; address?: string }
+      | undefined;
+    if (selected) {
+      const pretty =
+        selected.address ||
+        `${selected.latitude.toFixed(4)}, ${selected.longitude.toFixed(4)}`;
+      updateUser({ location: pretty } as any);
+      navigation.setParams({ selectedLocation: undefined } as any);
+    }
+  }, [route.params, navigation, updateUser]);
   return (
     <SafeAreaView
       style={[
@@ -21,47 +47,43 @@ export function ProfileScreen() {
     >
       <View style={{ height: spacing.s20 }} />
       {user ? (
-        <Card>
-          <View style={{ alignItems: "center", marginBottom: spacing.s16 }}>
-            <Image
-              source={{
-                uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  user.email
-                )}&background=random&size=160`,
-              }}
-              style={{
-                width: spacing.s80,
-                height: spacing.s80,
-                borderRadius: spacing.s40 as unknown as number,
-                backgroundColor: themeStyles.colors.chipBg,
+        <>
+          <Card>
+            <ProfileHeader
+              name={user.name}
+              email={user.email}
+              avatarUrl={avatarUrl}
+            />
+            <ProfileInfo
+              userId={user.id}
+              memberSince={
+                user.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString()
+                  : undefined
+              }
+              plan="Free"
+              location={user.location || null}
+            />
+          </Card>
+
+          <View style={{ height: spacing.s12 }} />
+
+          <Card>
+            <ProfileActions
+              onEditPhoto={async () => {
+                try {
+                  const picked = await cameraService.pickImageFromLibrary({
+                    allowsEditing: true,
+                    aspect: [1, 1],
+                  });
+                  if (picked?.uri) {
+                    await updateUser({ avatarUrl: picked.uri } as any);
+                  }
+                } catch {}
               }}
             />
-            <Text
-              style={{
-                color: themeStyles.colors.text,
-                fontSize: typography.size.lg,
-                fontWeight: typography.weight.medium,
-                marginTop: spacing.s8,
-              }}
-            >
-              {user.email.split("@")[0]}
-            </Text>
-            <Text
-              style={{
-                color: themeStyles.colors.muted,
-                fontSize: typography.size.sm,
-              }}
-            >
-              {user.email}
-            </Text>
-          </View>
-
-          <View style={{ rowGap: spacing.s8 }}>
-            <KeyValueRow label="User ID" value={user.id} />
-            <KeyValueRow label="Member since" value="—" />
-            <KeyValueRow label="Plan" value="Free" />
-          </View>
-        </Card>
+          </Card>
+        </>
       ) : (
         <Card>
           <Text style={{ color: themeStyles.colors.text }}>Not logged in</Text>
@@ -70,37 +92,3 @@ export function ProfileScreen() {
     </SafeAreaView>
   );
 }
-
-function Row({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: { text: string; muted: string } & Record<string, any>;
-}) {
-  return (
-    <View style={styles.row}>
-      <Text style={{ color: color.muted, fontSize: typography.size.sm }}>
-        {label}
-      </Text>
-      <Text style={{ color: color.text, fontWeight: typography.weight.medium }}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: spacing.s12,
-    padding: spacing.s16,
-    ...globalStyles.shadowSmall,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-});

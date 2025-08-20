@@ -4,21 +4,25 @@ import {
   DefaultTheme,
   DarkTheme,
   Theme,
+  LinkingOptions,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../hooks/useAuth";
-import { AuthNavigator, DrawerNavigator } from ".";
+import { AuthNavigator } from "./AuthNavigator";
+import { DrawerNavigator } from "./DrawerNavigator";
+import { ProfileSetupNavigator } from "./ProfileSetupNavigator";
 import { useTheme } from "../hooks/useTheme";
 
 export type RootStackParamList = {
   Main: undefined;
   Auth: undefined;
+  ProfileSetup: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { theme, themeStyles } = useTheme();
   const c = themeStyles.colors;
 
@@ -38,11 +42,31 @@ export function AppNavigator() {
     } as Theme;
   }, [theme, c]);
 
+  const linking: LinkingOptions<any> = {
+    prefixes: ["task-2://"],
+    config: {
+      screens: {
+        Main: {
+          screens: {
+            NoteDetails: "note/:id",
+          },
+        },
+      },
+    },
+  };
+
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
-          <Stack.Screen name="Main" component={DrawerNavigator} />
+          user && (user as any).profileCompleted ? (
+            <Stack.Screen name="Main" component={DrawerNavigator} />
+          ) : (
+            <Stack.Screen
+              name="ProfileSetup"
+              component={ProfileSetupNavigator}
+            />
+          )
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}

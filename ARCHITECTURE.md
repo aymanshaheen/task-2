@@ -4,12 +4,14 @@ High-level overview of structure, data flow, and trade‑offs.
 
 ### Tech Stack
 
-- Expo (React Native 0.79.5) + TypeScript + React 19.0.0
+- Expo (SDK 53, React Native 0.79.5) + TypeScript + React 19.0.0
 - Navigation via React Navigation v7 (Stack, Drawer, Tab navigators)
 - State via React hooks with Context providers; persistence via AsyncStorage
-- Rich text editing with react-native-pell-rich-editor (HTML storage)
-- Gesture handling with react-native-gesture-handler and reanimated
-- Network status monitoring via @react-native-community/netinfo
+- Rich text editing with `react-native-pell-rich-editor` (HTML storage)
+- Gesture handling with `react-native-gesture-handler` and `react-native-reanimated`
+- Network status monitoring via `@react-native-community/netinfo`
+- Notifications with `expo-notifications`
+- Image utilities via `expo-image-picker`, `expo-image-manipulator`, and `expo-file-system`
 - Offline-first architecture with automatic sync and conflict resolution
 - Semantic tokens and theme system with dark mode support
 
@@ -37,11 +39,12 @@ High-level overview of structure, data flow, and trade‑offs.
 
 ### Offline-First Architecture
 
-- **Network Monitoring**: `useNetworkStatus` provides real-time network state with connection quality detection and throttled updates to prevent performance issues.
+- **Network Monitoring**: `useNetworkStatus` provides real-time network state with connection quality detection, throttled updates, and an `isInitialized` guard to avoid false transitions.
+- **Network Awareness**: `useNetworkAware` exposes `isOffline`, `justCameOnline`, and `justWentOffline` transitions for UI feedback components like `NetworkSnackbar` and `OfflineIndicator`.
 - **Offline Queue**: Operations are queued when offline and automatically sync when connectivity is restored via `offlineQueueService`.
-- **Sync Management**: `syncManager` handles bidirectional sync with conflict resolution, retry logic, and progress tracking.
+- **Sync Management**: `useSyncManager` (service hook) handles bidirectional sync with conflict resolution, retry logic, and progress tracking.
 - **Error Handling**: `useOfflineErrorHandler` provides context-aware error messages and retry mechanisms based on network status.
-- **Offline Integration**: `useOfflineIntegration` combines network awareness, sync management, and error handling into a unified interface.
+- **Offline Integration**: `useOfflineIntegration` combines network awareness, sync management, and error handling into a unified interface and exposes `performSync`, `hasPendingOperations`, and `isSyncing`.
 - **Local-first**: All operations work offline first, with sync happening transparently in the background.
 
 ### Services Layer
@@ -85,11 +88,11 @@ High-level overview of structure, data flow, and trade‑offs.
 
 ### Data Model
 
-- **User**: `{ id, email }` - Simple authentication model
-- **AuthSession**: `{ user: AuthUser | null }` - Session state persisted to AsyncStorage
-- **Note**: `{ id, title, content(HTML), author?, tags[], pinned, favorite, createdAt, updatedAt }`
+- **User**: `{ id, email, name? }`
+- **AuthSession**: `{ user: AuthUser | null, token: string | null, expiresAt?: number }` - Session state persisted to AsyncStorage
+- **Note**: See `src/models/notes.ts` (fields include `isFavorite`, optional `photos`, optional `location`, sync metadata)
 - IDs are generated locally using `Math.random().toString(36).slice(2)` for both users and notes
-- Notes ordering: pinned notes first, then by creation time (newest first)
+- Notes ordering: managed in UI; service returns arrays filtered/sorted as needed
 
 ### Error Handling
 

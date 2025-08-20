@@ -19,6 +19,9 @@ import { useOfflineIntegration } from "../../hooks/useOfflineIntegration";
 import { spacing } from "../../styles/spacing";
 import { globalStyles } from "../../styles/globalStyles";
 import { NoteForm } from "../../components/forms/NoteForm";
+import { permissionsService } from "../../services/permissionsService";
+import { cameraService } from "../../services/cameraService";
+import { locationService } from "../../services/locationService";
 import { FormLoadingState } from "../../components/forms/FormLoadingState";
 import { NetworkSnackbar } from "../../components/common/NetworkSnackbar";
 import { SavingToast } from "../../components/common/SavingToast";
@@ -33,13 +36,31 @@ export function AddNoteScreen() {
   const { errors, validateForm, clearError } = useNoteFormValidation();
 
   const noteId = (route.params as any)?.noteId;
+  const selectedLocationFromPicker = (route.params as any)?.selectedLocation as
+    | { latitude: number; longitude: number; address?: string }
+    | undefined;
   const isEditMode = !!noteId;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingNote, setIsLoadingNote] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (selectedLocationFromPicker) {
+      setLocation(selectedLocationFromPicker);
+      // Clear the param to avoid re-applying on focus changes
+      (navigation as any)?.setParams?.({ selectedLocation: undefined });
+    }
+  }, [selectedLocationFromPicker]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -56,6 +77,9 @@ export function AddNoteScreen() {
         setTitle("");
         setContent("");
         setIsFavorite(false);
+        setIsPublic(false);
+        setPhotos([]);
+        setLocation(null);
       }
     }, [isEditMode])
   );
@@ -68,6 +92,9 @@ export function AddNoteScreen() {
           setTitle(note.title || "");
           setContent(note.content || "");
           setIsFavorite(note.isFavorite || false);
+          setIsPublic((note as any).isPublic || false);
+          setPhotos((note as any).photos || []);
+          setLocation((note as any).location || null);
         })
         .catch((error) => {
           Alert.alert("Error", "Failed to load note for editing");
@@ -92,12 +119,17 @@ export function AddNoteScreen() {
           title: title.trim(),
           content: content.trim(),
           isFavorite,
+          photos,
+          location: location || undefined,
         });
       } else {
         await createNote({
           title: title.trim(),
           content: content.trim(),
           isFavorite,
+          isPublic,
+          photos,
+          location: location || undefined,
         });
       }
 
@@ -145,6 +177,41 @@ export function AddNoteScreen() {
     if (errors.content) clearError("content");
   };
 
+  const handlePickPhotos = async () => {
+    const granted = await permissionsService.ensureMediaPermissions();
+    if (!granted) return;
+    const uris = await cameraService.pickImagesFromLibrary({
+      max: 10,
+      compressQuality: 0.7,
+      maxDimension: 1600,
+    });
+    if (uris?.length) {
+      setPhotos((prev) => Array.from(new Set([...(prev || []), ...uris])));
+    }
+  };
+
+  const handleRemovePhoto = (uri: string) => {
+    setPhotos((prev) => (prev || []).filter((p) => p !== uri));
+  };
+
+  const handleUseCurrentLocation = async () => {
+    const granted = await permissionsService.ensureLocationPermissions();
+    if (!granted) return;
+    const loc = await locationService.getCurrentLocationWithAddress();
+    if (loc) {
+      const pretty = loc.address
+        ? [loc.address.city, loc.address.region, loc.address.country]
+            .filter(Boolean)
+            .join(", ")
+        : undefined;
+      setLocation({
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        address: pretty,
+      });
+    }
+  };
+
   const isFormDisabled = isSubmitting || loading || isLoadingNote;
 
   return (
@@ -161,9 +228,11 @@ export function AddNoteScreen() {
           title={title}
           content={content}
           isFavorite={isFavorite}
+          isPublic={isPublic}
           onTitleChange={handleTitleChange}
           onContentChange={handleContentChange}
           onFavoriteChange={setIsFavorite}
+          onPublicChange={setIsPublic}
           onCancel={handleCancel}
           onSave={handleSave}
           titleError={errors.title}
@@ -171,6 +240,12 @@ export function AddNoteScreen() {
           generalError={error?.message}
           disabled={isFormDisabled}
           isEditMode={isEditMode}
+          photos={photos}
+          onPickPhotos={handlePickPhotos}
+          onRemovePhoto={handleRemovePhoto}
+          location={location || undefined}
+          onLocationChange={setLocation}
+          onUseCurrentLocation={handleUseCurrentLocation}
         />
 
         <FormLoadingState

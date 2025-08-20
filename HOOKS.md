@@ -4,13 +4,14 @@ Brief API docs and examples for hooks in `src/hooks/`.
 
 ### useAsyncStorage
 
-- **purpose**: Persist state to AsyncStorage with debounced writes
-- **signature**: `useAsyncStorage<T>(key: string, initialValue: T)`
-- **returns**: `{ value, setValue, clear, loading, saving, error }`
+- **purpose**: Persist state to AsyncStorage with debounced writes, metadata, validation, and retries
+- **signature**: `useAsyncStorage<T>(key: string, initialValue: T, options?: UseAsyncStorageOptions)`
+- **returns**: `{ value, loading, saving, initialized, error, setValue, clear, forceSave, retryLastOperation, clearError }`
+- **options**: `{ writeDelay?: number; validateOnRead?: boolean; retryOnFailure?: boolean; maxRetries?: number; compress?: boolean; ttl?: number }`
 
 ```ts
 const { value, setValue, clear, loading, saving, error } =
-  useAsyncStorage<number>("counter", 0);
+  useAsyncStorage<number>("counter", 0, { writeDelay: 250 });
 
 setValue(value + 1);
 
@@ -19,16 +20,20 @@ clear();
 
 ### useAuth
 
-- **purpose**: Manage authentication state with session persistence
+- **purpose**: Manage authentication state with session persistence and token refresh
 - **provider**: Must wrap app with `AuthProvider`
-- **returns**: `{ user, isAuthenticated, loading, login, signup, logout }`
+- **returns**: `{ user, isAuthenticated, loading, initializing, login, signup, logout, refreshToken, updateUser, isTokenExpired }`
 - **types**:
-  - **user**: `AuthUser | null` where `AuthUser = { id: string, email: string }`
+  - **user**: `AuthUser | null`
   - **isAuthenticated**: boolean
   - **loading**: boolean
+  - **initializing**: boolean
   - **login**: `(email: string, password: string) => Promise<void>`
-  - **signup**: `(email: string, password: string) => Promise<void>`
+  - **signup**: `(email: string, password: string, name?: string, profileImageUri?: string | null) => Promise<void>`
   - **logout**: `() => Promise<void>`
+  - **refreshToken**: `() => Promise<boolean>`
+  - **updateUser**: `(userUpdates: Partial<AuthUser>) => Promise<void>`
+  - **isTokenExpired**: `() => boolean`
 
 ```tsx
 // App setup
@@ -70,23 +75,33 @@ function LoginScreen() {
 
 ### useNotes
 
-- **purpose**: CRUD for notes stored in AsyncStorage + helpers
+- **purpose**: Notes CRUD with optimistic updates, favorites support, network awareness, and sync integration
 - **returns**:
 
-  - **notes**: `Note[]` (sorted pinned first, then by createdAt desc)
-  - **createNote**: `(note: NewNote) => void` - create new note
-  - **updateNote**: `(noteId: string, updates: Partial<Note>) => void`
-  - **deleteNote**: `(noteId: string) => void`
-  - **togglePin**: `(noteId: string) => void`
-  - **toggleFavorite**: `(noteId: string) => void`
-  - **tags**: `string[]` - all unique tags from all notes
+  - **notes**: `Note[]`
+  - **favorites**: `Note[]`
+  - **loadNotes**: `() => Promise<void>`
+  - **loadFavorites**: `() => Promise<void>`
+  - **createNote**: `(note: NewNote) => Promise<void>`
+  - **updateNote**: `(noteId: string, updates: Partial<Note>) => Promise<void>`
+  - **deleteNote**: `(noteId: string) => Promise<void>`
+  - **togglePin**: `(noteId: string) => Promise<void>`
+  - **toggleFavorite**: `(noteId: string) => Promise<void>`
+  - **refreshNotes**: `() => Promise<void>`
+  - **refreshFavorites**: `() => Promise<void>`
+  - **tags**: `string[]`
+  - **error**: `NotesError | null`
   - **loading**: boolean
+  - **refreshing**: boolean
   - **saving**: boolean
-  - **error**: Error | null
+  - **isOffline**: boolean
+  - **syncStatus**: object
+  - **performManualSync**: `() => Promise<any>`
+  - **getNote**: `(noteId: string) => Promise<Note>`
 
 - **types**:
-  - **Note**: `{ id, title, content(HTML), author?, tags[], pinned, favorite, createdAt, updatedAt }`
-  - **NewNote**: `Pick<Note, "title" | "content" | "tags" | "author">`
+  - **Note**: See `src/models/notes.ts`
+  - **NewNote**: `Pick<Note, "title" | "content"> & { author?: string; tags?: string[]; isFavorite?: boolean; isPublic?: boolean; photos?: string[]; location?: { latitude: number; longitude: number; address?: string } }`
 
 ```tsx
 import { useNotes } from "./src/hooks/useNotes";
@@ -205,13 +220,13 @@ function ThemedComponent() {
 
 ### useNetworkStatus
 
-- **purpose**: Monitor network connectivity and connection quality with throttled updates
+- **purpose**: Monitor connectivity with throttled updates and reachability checks
 - **signature**: `useNetworkStatus()`
-- **returns**: `NetworkStatus & NetworkActions`
+- **returns**: `NetworkStatus & NetworkActions & { isInitialized: boolean }`
 - **types**:
-  - **NetworkStatus**: `{ isConnected, isInternetReachable, type, details, connectionQuality }`
-  - **NetworkActions**: `{ refresh, checkReachability }`
-  - **connectionQuality**: `"excellent" | "good" | "poor" | "offline"`
+  - **NetworkStatus**: `{ isConnected: boolean; isInternetReachable: boolean | null; type: NetInfoStateType; details: { isConnectionExpensive: boolean | null; ssid: string | null; bssid: string | null; strength: number | null; ipAddress: string | null; subnet: string | null }; connectionQuality: "excellent" | "good" | "poor" | "offline" }`
+  - **NetworkActions**: `{ refresh: () => Promise<void>; checkReachability: (url?: string) => Promise<boolean> }`
+  - **isInitialized**: boolean
 
 ```tsx
 import { useNetworkStatus } from "./src/hooks/useNetworkStatus";
@@ -341,7 +356,7 @@ function ErrorAwareComponent() {
 
 - **purpose**: Complete offline integration with sync management
 - **signature**: `useOfflineIntegration()`
-- **returns**: `{ isOnline, isOffline, connectionQuality, syncStatus, performSync, handleError, ... }`
+- **returns**: `{ isOnline, isOffline, connectionQuality, networkType, justCameOnline, justWentOffline, syncStatus, hasPendingOperations, isSyncing, lastSyncTime, performSync, handleError, getErrorMessage, showOfflineMessage }`
 
 ```tsx
 import { useOfflineIntegration } from "./src/hooks/useOfflineIntegration";
@@ -416,6 +431,12 @@ function SimpleOfflineComponent() {
 ```
 
 ### useNoteFormValidation
+
+### useAuthFormValidation
+
+- **purpose**: Validate login/signup forms with dynamic fields and live validation
+- **signature**: `useAuthFormValidation(formType: "login" | "signup")`
+- **returns**: `{ formData, errors, touched, visibleFields, isFormValid, passwordStrength, liveValidation, updateField, setFieldTouched, clearError, validateForm, getAllValidationErrors, resetForm, setLiveValidation }`
 
 - **purpose**: Form validation for note creation/editing
 - **signature**: `useNoteFormValidation()`

@@ -142,12 +142,16 @@ type Note = {
   id: string;
   title: string;
   content: string; // HTML
-  author?: string;
   tags: string[];
-  pinned: boolean;
-  favorite: boolean;
-  updatedAt: number;
-  createdAt: number;
+  isFavorite: boolean;
+  isPublic?: boolean;
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+  userId: string;
+  isLocalOnly?: boolean;
+  needsSync?: boolean;
+  photos?: string[];
+  location?: { latitude: number; longitude: number; address?: string };
 };
 ```
 
@@ -163,13 +167,27 @@ type Note = {
 
 ### NoteDetailsCard
 
-- **note**: object (required) with properties:
-  - **title**: string
-  - **content**: string (HTML)
-  - **author**: string (optional)
-  - **tags**: string[]
-  - **createdAt**: number
-  - **updatedAt**: number
+- **note**: `Note` (required)
+
+Note shape:
+
+```ts
+type Note = {
+  id: string;
+  title: string;
+  content: string; // HTML
+  tags: string[];
+  isFavorite: boolean;
+  isPublic?: boolean;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+  userId: string;
+  isLocalOnly?: boolean;
+  needsSync?: boolean;
+  photos?: string[];
+  location?: { latitude: number; longitude: number; address?: string };
+};
+```
 
 ```tsx
 <NoteDetailsCard note={selectedNote} />
@@ -200,6 +218,9 @@ type Note = {
 - **onDelete**: (noteId: string) => void (required)
 - **onTogglePin**: (noteId: string) => void (required)
 - **onToggleFavorite**: (noteId: string) => void (required)
+- **refreshing**: boolean (optional) - Pull-to-refresh state
+- **onRefresh**: () => void (optional) - Refresh handler
+- **tintColor**: string (optional) - Refresh control tint color
 
 ```tsx
 <NotesList
@@ -268,7 +289,17 @@ type Note = {
 
 ### SwipeActions
 
-Note: Check actual implementation for SwipeActions component props (component exists but needs props documentation)
+Props:
+
+- **children**: React.ReactNode (required)
+- **onDelete**: () => void (required)
+- **deleteLabel**: string (optional, default: "Delete")
+
+```tsx
+<SwipeActions onDelete={() => console.log("delete")}>
+  <View>{/* swipable content */}</View>
+</SwipeActions>
+```
 
 ### TagFilterChips
 

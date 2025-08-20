@@ -3,7 +3,8 @@ import { Text, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { AllNotesScreen } from "../screens/notes/AllNotesScreen";
 import { FavoritesScreen } from "../screens/notes/FavoritesScreen";
-import { TagsScreen } from "../screens/notes/TagsScreen";
+import { SocialFeedScreen } from "../screens/social/SocialFeedScreen";
+import { useNotificationCenter } from "../hooks/useNotificationCenter";
 import { SettingsScreen } from "../screens/settings/SettingsScreen";
 import { useTheme } from "../hooks/useTheme";
 import { typography } from "../styles/typography";
@@ -12,7 +13,7 @@ import { spacing } from "../styles/spacing";
 export type MainTabParamList = {
   All: undefined;
   Favorites: undefined;
-  Tags: undefined;
+  Social: undefined;
   Settings: undefined;
 };
 
@@ -21,6 +22,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export function TabNavigator() {
   const { themeStyles } = useTheme();
   const c = themeStyles.colors;
+  const { unreadCount } = useNotificationCenter();
 
   return (
     <Tab.Navigator
@@ -87,13 +89,14 @@ export function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Tags"
-        component={TagsScreen}
+        name="Social"
+        component={SocialFeedScreen}
         options={{
-          title: "Categories",
+          title: "Social",
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarIcon: ({ focused, color, size }) => (
             <Text style={{ color, fontSize: focused ? size + 2 : size }}>
-              🏷️
+              💬
             </Text>
           ),
           tabBarLabel: ({ focused, color }) => (
@@ -106,7 +109,7 @@ export function TabNavigator() {
                   : typography.weight.medium,
               }}
             >
-              Categories
+              Social
             </Text>
           ),
         }}

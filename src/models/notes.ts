@@ -4,6 +4,7 @@ export interface Note {
   content: string;
   tags: string[];
   isFavorite: boolean;
+  isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
   userId: string;
@@ -11,6 +12,12 @@ export interface Note {
   needsSync?: boolean;
   conflictResolution?: "local" | "remote" | "manual";
   lastSyncAttempt?: string;
+  photos?: string[]; // array of image URIs
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
 }
 
 export interface CreateNoteData {
@@ -19,6 +26,13 @@ export interface CreateNoteData {
   category?: string;
   tags?: string[];
   isFavorite?: boolean;
+  isPublic?: boolean;
+  photos?: string[];
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
 }
 
 export interface UpdateNoteData {
@@ -26,6 +40,12 @@ export interface UpdateNoteData {
   content?: string;
   tags?: string[];
   isFavorite?: boolean;
+  photos?: string[];
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
 }
 
 export interface NotesFilter {

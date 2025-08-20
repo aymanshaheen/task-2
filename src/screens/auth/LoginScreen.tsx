@@ -1,135 +1,144 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Alert, Keyboard } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
+import { useAuthFormValidation } from "../../hooks/useAuthFormValidation";
+import { useAutoSave } from "../../hooks/useAutoSave";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { AuthTitle } from "../../components/auth/AuthTitle";
 import { AuthTextInput } from "../../components/auth/AuthTextInput";
-
-interface TouchedState {
-  email: boolean;
-  password: boolean;
-}
-
-interface FormErrors {
-  email?: string;
-  password?: string;
-  general?: string;
-}
+import { AuthToggle } from "../../components/auth/AuthToggle";
+import { ValidationMessages } from "../../components/auth/ValidationMessages";
 
 export function LoginScreen({ navigation }: any) {
   const { login, loading } = useAuth();
   const { themeStyles } = useTheme();
   const c = themeStyles.colors;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [touched, setTouched] = useState<TouchedState>({
-    email: false,
-    password: false,
+  const {
+    formData,
+    errors,
+    touched,
+    isFormValid,
+    updateField,
+    setFieldTouched,
+    validateForm,
+    getAllValidationErrors,
+    resetForm,
+  } = useAuthFormValidation("login");
+
+  // Auto-save form data
+  const {
+    hasDraft,
+    saving: autoSaving,
+    initialized,
+    getSavedData,
+    clearDraft,
+    markAsSubmitted,
+  } = useAutoSave("login_form", {
+    email: formData.email,
+    rememberMe: formData.rememberMe || false,
   });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [rememberMe, setRememberMe] = useState(false);
 
-  const emailValid = useMemo(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-  }, [email]);
+  const hasShownRestoreDialog = useRef(false);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<
+    { field: string; label: string; message: string }[]
+  >([]);
 
-  const passwordValid = useMemo(() => {
-    return password.length >= 6;
-  }, [password]);
+  // Load saved draft on component mount
+  useEffect(() => {
+    if (hasShownRestoreDialog.current) return;
 
-  const isFormValid = useMemo(() => {
-    return (
-      emailValid &&
-      passwordValid &&
-      email.trim().length > 0 &&
-      password.length > 0
-    );
-  }, [emailValid, passwordValid, email, password]);
+    const savedData = getSavedData();
+    if (savedData && hasDraft && initialized) {
+      hasShownRestoreDialog.current = true;
 
-  const handleEmailChange = useCallback(
-    (text: string) => {
-      setEmail(text);
-      if (errors.email) {
-        setErrors((prev) => ({ ...prev, email: undefined }));
-      }
-    },
-    [errors.email]
-  );
-
-  const handlePasswordChange = useCallback(
-    (text: string) => {
-      setPassword(text);
-      if (errors.password) {
-        setErrors((prev) => ({ ...prev, password: undefined }));
-      }
-    },
-    [errors.password]
-  );
-
-  const handleEmailBlur = useCallback(() => {
-    setTouched((prev) => ({ ...prev, email: true }));
-
-    if (!emailValid && email.length > 0) {
-      setErrors((prev) => ({
-        ...prev,
-        email: "Please enter a valid email address",
-      }));
+      // Show alert asking if user wants to restore draft
+      Alert.alert(
+        "Restore Draft",
+        "You have unsaved login data. Would you like to restore it?",
+        [
+          {
+            text: "No",
+            style: "cancel",
+            onPress: () => {
+              clearDraft();
+            },
+          },
+          {
+            text: "Yes",
+            onPress: () => {
+              if (savedData.email) {
+                updateField("email", savedData.email);
+              }
+              if (savedData.rememberMe !== undefined) {
+                updateField("rememberMe", savedData.rememberMe);
+              }
+            },
+          },
+        ]
+      );
     }
-  }, [emailValid, email.length]);
-
-  const handlePasswordBlur = useCallback(() => {
-    setTouched((prev) => ({ ...prev, password: true }));
-
-    if (!passwordValid && password.length > 0) {
-      setErrors((prev) => ({
-        ...prev,
-        password: "Password must be at least 6 characters",
-      }));
-    }
-  }, [passwordValid, password.length]);
+  }, [hasDraft, getSavedData, clearDraft, updateField, initialized]);
 
   const handleSubmit = useCallback(async () => {
     try {
-      setErrors({});
+      // Simple validation - check if fields are empty
+      const hasEmail = formData.email && formData.email.trim().length > 0;
+      const hasPassword = formData.password && formData.password.length > 0;
 
-      if (!isFormValid) {
-        Alert.alert(
-          "Invalid Form",
-          "Please check your email and password and try again."
-        );
+      if (!hasEmail || !hasPassword) {
+        const errors = [];
+        if (!hasEmail) {
+          errors.push({
+            field: "email",
+            label: "Email",
+            message: "Email is required",
+          });
+        }
+        if (!hasPassword) {
+          errors.push({
+            field: "password",
+            label: "Password",
+            message: "Password is required",
+          });
+        }
+
+        setValidationErrors(errors);
+        setShowValidationErrors(true);
         return;
       }
 
+      // Clear validation errors if form is valid
+      setShowValidationErrors(false);
+      setValidationErrors([]);
+
       Keyboard.dismiss();
 
-      await login(email.trim(), password);
+      await login(formData.email.trim(), formData.password);
+
+      // Clear draft after successful login
+      await markAsSubmitted();
     } catch (error: any) {
+      // Handle specific error types
+      let errorMessage = "Login failed. Please try again.";
+
       if (error.message?.includes("Invalid credentials")) {
-        setErrors({
-          general:
-            "Invalid email or password. Please check your credentials and try again.",
-        });
+        errorMessage =
+          "Invalid email or password. Please check your credentials and try again.";
       } else if (error.message?.includes("Network")) {
-        setErrors({
-          general: "Network error. Please check your connection and try again.",
-        });
+        errorMessage =
+          "Network error. Please check your connection and try again.";
       } else if (error.message?.includes("Rate limit")) {
-        setErrors({
-          general:
-            "Too many login attempts. Please wait a few minutes and try again.",
-        });
-      } else {
-        setErrors({
-          general:
-            "Login failed. Please try again or contact support if the problem persists.",
-        });
+        errorMessage =
+          "Too many login attempts. Please wait a few minutes and try again.";
       }
+
+      Alert.alert("Login Error", errorMessage);
     }
-  }, [isFormValid, email, password, login]);
+  }, [formData.email, formData.password, login, markAsSubmitted]);
 
   const navigateToSignup = useCallback(() => {
     navigation.navigate("Signup");
@@ -142,6 +151,35 @@ export function LoginScreen({ navigation }: any) {
     );
   }, []);
 
+  const getValidationState = (fieldName: string) => {
+    if (!touched[fieldName]) return "default";
+    if (errors[fieldName]) return "invalid";
+    // Check if field has content and no errors
+    const fieldValue = formData[fieldName as keyof typeof formData];
+    if (
+      fieldValue &&
+      typeof fieldValue === "string" &&
+      fieldValue.trim().length > 0
+    ) {
+      return "valid";
+    }
+    return "default";
+  };
+
+  // Clear validation messages when user starts typing
+  const handleFieldChange = useCallback(
+    (fieldName: keyof typeof formData, value: any) => {
+      updateField(fieldName, value);
+
+      // Clear validation messages if they're showing
+      if (showValidationErrors) {
+        setShowValidationErrors(false);
+        setValidationErrors([]);
+      }
+    },
+    [updateField, showValidationErrors]
+  );
+
   return (
     <View
       style={{
@@ -153,62 +191,62 @@ export function LoginScreen({ navigation }: any) {
     >
       <AuthTitle>Welcome back</AuthTitle>
 
-      {errors.general && (
+      {/* Auto-save indicator */}
+      {autoSaving && (
         <View
           style={{
-            backgroundColor: c.dangerBg,
-            padding: spacing.s12,
-            borderRadius: spacing.s8,
-            marginBottom: spacing.s16,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: spacing.s8,
           }}
         >
           <Text
             style={{
-              color: c.dangerText,
-              fontSize: typography.size.sm,
-              textAlign: "center",
+              color: c.muted,
+              fontSize: typography.size.xs,
             }}
           >
-            {errors.general}
+            💾 Auto-saving...
           </Text>
         </View>
       )}
 
+      <ValidationMessages
+        errors={validationErrors}
+        visible={showValidationErrors}
+        onDismiss={() => setShowValidationErrors(false)}
+      />
+
       <AuthTextInput
-        placeholder="Email address"
+        label="Email Address"
+        placeholder="Enter your email address"
         autoCapitalize="none"
         autoComplete="email"
         autoCorrect={false}
         keyboardType="email-address"
-        value={email}
-        onChangeText={handleEmailChange}
-        onBlur={handleEmailBlur}
-        invalid={touched.email && !emailValid}
-        errorText={
-          errors.email ||
-          (touched.email && !emailValid
-            ? "Please enter a valid email address"
-            : undefined)
-        }
+        value={formData.email}
+        onChangeText={(text) => handleFieldChange("email", text)}
+        onBlur={() => setFieldTouched("email")}
+        validationState={getValidationState("email")}
+        showValidationIcon={touched.email}
+        errorText={errors.email}
         accessibilityLabel="Email address"
         accessibilityHint="Enter your email address to log in"
       />
 
       <AuthTextInput
-        placeholder="Password"
+        label="Password"
+        placeholder="Enter your password"
         secureTextEntry
         autoComplete="password"
-        value={password}
-        onChangeText={handlePasswordChange}
-        onBlur={handlePasswordBlur}
-        invalid={touched.password && !passwordValid}
-        errorText={
-          errors.password ||
-          (touched.password && !passwordValid
-            ? "Password must be at least 6 characters"
-            : undefined)
-        }
-        style={{ marginBottom: spacing.s8 }}
+        value={formData.password}
+        onChangeText={(text) => handleFieldChange("password", text)}
+        onBlur={() => setFieldTouched("password")}
+        validationState={getValidationState("password")}
+        showValidationIcon={touched.password}
+        errorText={errors.password}
+        hint="Password must be at least 6 characters"
         accessibilityLabel="Password"
         accessibilityHint="Enter your password to log in"
       />
@@ -230,56 +268,18 @@ export function LoginScreen({ navigation }: any) {
         </Text>
       </Pressable>
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: spacing.s20,
-        }}
-      >
-        <Pressable
-          onPress={() => setRememberMe(!rememberMe)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: rememberMe }}
-          accessibilityLabel="Remember me"
-        >
-          <View
-            style={{
-              width: 20,
-              height: 20,
-              borderWidth: 2,
-              borderColor: c.primary,
-              borderRadius: 4,
-              marginRight: spacing.s8,
-              backgroundColor: rememberMe ? c.primary : "transparent",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {rememberMe && (
-              <Text style={{ color: c.white, fontSize: 12 }}>✓</Text>
-            )}
-          </View>
-          <Text
-            style={{
-              color: c.text,
-              fontSize: typography.size.sm,
-            }}
-          >
-            Remember me
-          </Text>
-        </Pressable>
-      </View>
+      <AuthToggle
+        label="Remember me"
+        description="Keep me logged in on this device"
+        value={formData.rememberMe || false}
+        onValueChange={(value) => handleFieldChange("rememberMe", value)}
+      />
 
       <Pressable
         onPress={handleSubmit}
-        disabled={loading || !isFormValid}
+        disabled={loading}
         style={{
-          backgroundColor: loading || !isFormValid ? c.primaryAlt : c.primary,
+          backgroundColor: loading ? c.primaryAlt : c.primary,
           paddingVertical: spacing.s16,
           borderRadius: spacing.s12,
           alignItems: "center",
@@ -288,7 +288,7 @@ export function LoginScreen({ navigation }: any) {
         }}
         accessibilityRole="button"
         accessibilityLabel={loading ? "Signing in" : "Log in"}
-        accessibilityState={{ disabled: loading || !isFormValid }}
+        accessibilityState={{ disabled: loading }}
       >
         <Text
           style={{

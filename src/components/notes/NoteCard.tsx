@@ -8,6 +8,8 @@ import {
   Alert,
   Animated,
   Easing,
+  Image,
+  ScrollView,
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
@@ -221,6 +223,43 @@ export const NoteCard = memo(
               </Text>
             </TouchableOpacity>
           )}
+          {!!(note as any).photos?.length && !isEditing && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: spacing.s8 }}
+            >
+              {(note as any).photos
+                .slice(0, 5)
+                .map((uri: string, idx: number) => (
+                  <View
+                    key={`${note.id}_photo_${idx}`}
+                    style={{ marginRight: spacing.s8 }}
+                  >
+                    <Image
+                      source={{ uri }}
+                      style={{
+                        width: 120,
+                        height: 90,
+                        borderRadius: spacing.s6,
+                        backgroundColor: themeStyles.colors.surface,
+                      }}
+                    />
+                  </View>
+                ))}
+            </ScrollView>
+          )}
+          {!!(note as any).location && !isEditing && (
+            <Text
+              style={[styles.location, { color: themeStyles.colors.muted }]}
+            >
+              📍{" "}
+              {(note as any).location.address ||
+                `${(note as any).location.latitude?.toFixed?.(4)}, ${(
+                  note as any
+                ).location.longitude?.toFixed?.(4)}`}
+            </Text>
+          )}
           {isEditing && (
             <TextInput
               placeholder="tags (comma separated)"
@@ -299,6 +338,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   counter: {
+    marginTop: spacing.s6,
+    fontSize: typography.size.xs,
+  },
+  location: {
     marginTop: spacing.s6,
     fontSize: typography.size.xs,
   },

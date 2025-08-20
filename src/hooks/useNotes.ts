@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { notesService } from "../services/notesService";
 import { cacheManager } from "../services/storageService";
-import { syncManager, useSyncManager } from "../services/syncManager";
+import { useSyncManager } from "../services/syncManager";
 import { useAuth } from "./useAuth";
 import { useNetworkAware, useIsOffline } from "./useNetworkStatus";
 import {
@@ -17,6 +17,9 @@ type NewNote = Pick<Note, "title" | "content"> & {
   author?: string;
   tags?: string[];
   isFavorite?: boolean;
+  isPublic?: boolean;
+  photos?: string[];
+  location?: { latitude: number; longitude: number; address?: string };
 };
 
 export function useNotes() {
@@ -246,6 +249,8 @@ export function useNotes() {
         content: note.content || "",
         tags: note.tags || [],
         isFavorite: note.isFavorite || false,
+        photos: note.photos || [],
+        location: note.location,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         userId: user.id,
@@ -263,6 +268,9 @@ export function useNotes() {
           content: note.content || "",
           tags: note.tags || [],
           isFavorite: note.isFavorite || false,
+          isPublic: note.isPublic || false,
+          photos: note.photos || [],
+          location: note.location,
         };
 
         const newNote = await notesService.createNote(noteData, user.id);
@@ -316,6 +324,8 @@ export function useNotes() {
           content: updates.content,
           tags: updates.tags,
           isFavorite: updates.isFavorite,
+          photos: (updates as any).photos,
+          location: (updates as any).location,
         };
 
         const updatedNote = await notesService.updateNote(
@@ -356,25 +366,12 @@ export function useNotes() {
         await notesService.deleteNote(noteId);
       } catch (err: any) {
         setError(err);
-        // Revert optimistic update on error
         await loadNotes();
       } finally {
         setSaving(false);
       }
     },
     [user?.id, notes]
-  );
-
-  const togglePin = useCallback(
-    async (noteId: string) => {
-      const note = notes.find((n) => n.id === noteId);
-      if (!note) return;
-
-      await updateNote(noteId, {
-        ...note,
-      });
-    },
-    [notes]
   );
 
   const toggleFavorite = useCallback(
@@ -525,7 +522,6 @@ export function useNotes() {
     createNote,
     updateNote,
     deleteNote,
-    togglePin,
     toggleFavorite,
     refreshNotes,
     refreshFavorites,

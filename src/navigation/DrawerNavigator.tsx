@@ -15,6 +15,7 @@ import { useTheme } from "../hooks/useTheme";
 import { NoteDetailsScreen } from "../screens/notes/NoteDetailsScreen";
 import { SearchScreen } from "../screens/notes/SearchScreen";
 import { AddNoteScreen } from "../screens/notes/AddNoteScreen";
+import { MapPickerScreen } from "../screens/common/MapPickerScreen";
 import { spacing } from "../styles/spacing";
 import { typography } from "../styles/typography";
 
@@ -26,6 +27,12 @@ export type DrawerParamList = {
   NoteDetails: { id: string } | undefined;
   Search: undefined;
   AddNote: { noteId?: string } | undefined;
+  MapPicker:
+    | {
+        initialLocation?: { latitude: number; longitude: number } | null;
+        targetRouteName: string;
+      }
+    | undefined;
 };
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -130,8 +137,8 @@ export function DrawerNavigator() {
               ? "All"
               : focusedRoute === "Favorites"
               ? "Favorites"
-              : focusedRoute === "Tags"
-              ? "Categories"
+              : focusedRoute === "Social"
+              ? "Social"
               : focusedRoute === "Settings"
               ? "Settings"
               : "All";
@@ -180,6 +187,15 @@ export function DrawerNavigator() {
         component={AddNoteScreen}
         options={{
           title: "Add Note",
+          drawerLabel: () => null,
+          drawerItemStyle: { height: 0 },
+        }}
+      />
+      <Drawer.Screen
+        name="MapPicker"
+        component={MapPickerScreen}
+        options={{
+          title: "Pick Location",
           drawerLabel: () => null,
           drawerItemStyle: { height: 0 },
         }}

@@ -26,9 +26,12 @@ async function makeRequest<T>(
   try {
     const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 
+    const isFormDataBody =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
+
     const defaultHeaders: HeadersInit = {
-      "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
+      ...(!isFormDataBody && { "Content-Type": "application/json" }),
     };
 
     const controller = new AbortController();
@@ -95,12 +98,27 @@ async function makeRequest<T>(
 }
 
 export async function register(
-  credentials: RegisterCredentials
+  credentials: RegisterCredentials,
+  profileImage?: { uri: string; name?: string; type?: string }
 ): Promise<User> {
   try {
+    const formData = new FormData();
+    formData.append("name", credentials.name);
+    formData.append("email", credentials.email);
+    formData.append("password", credentials.password);
+
+    if (profileImage?.uri) {
+      const imagePart: any = {
+        uri: profileImage.uri,
+        name: profileImage.name || `profile_${Date.now()}.jpg`,
+        type: profileImage.type || "image/jpeg",
+      };
+      formData.append("profilePicture", imagePart);
+    }
+
     const response = await makeRequest<AuthResponse>("/auth/register", {
       method: "POST",
-      body: JSON.stringify(credentials),
+      body: formData,
     });
 
     await storeAuthData(response);

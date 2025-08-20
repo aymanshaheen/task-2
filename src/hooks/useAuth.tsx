@@ -17,7 +17,12 @@ interface AuthContextValue {
   initializing: boolean;
 
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name?: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    name?: string,
+    profileImageUri?: string | null
+  ) => Promise<void>;
   logout: () => Promise<void>;
 
   refreshToken: () => Promise<boolean>;
@@ -115,12 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (
       email: string,
       password: string,
-      name: string = ""
+      name: string = "",
+      profileImageUri?: string | null
     ): Promise<void> => {
       try {
         setLoading(true);
 
-        const user = await authService.register({ name, email, password });
+        const user = await authService.register(
+          { name, email, password },
+          profileImageUri
+            ? { uri: profileImageUri, name: "profile.jpg", type: "image/jpeg" }
+            : undefined
+        );
 
         const token = await authService.getAuthToken();
 

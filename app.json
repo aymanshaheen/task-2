@@ -3,6 +3,7 @@
     "name": "task 2",
     "slug": "task-2",
     "entryPoint": "./index.ts",
+    "scheme": "task-2",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,14 +15,23 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.task2.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "We use your camera so you can set a profile photo.",
+        "NSPhotoLibraryUsageDescription": "We access your photo library so you can choose a profile image.",
+        "NSLocationWhenInUseUsageDescription": "We use your location to personalize your experience.",
+        "NSUserTrackingUsageDescription": "We use notifications to alert you when others like your notes.",
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.task2.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"

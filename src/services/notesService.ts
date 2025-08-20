@@ -107,8 +107,6 @@ export async function makeAuthenticatedRequest<T>(
 }
 
 class NotesService {
-  private syncQueue: Note[] = [];
-  private isSyncing = false;
   private isOffline = false;
 
   setOfflineStatus(isOffline: boolean): void {
@@ -224,18 +222,39 @@ class NotesService {
 
       const notes = response.data || response.notes || response || [];
 
-      const normalizedNotes = notes.map((note: any) => ({
-        id: note.id || note._id,
-        title: note.title || "",
-        content: note.content || "",
-        tags: note.tags || [],
-        isFavorite: note.isFavorite || note.favorite || false,
-        createdAt:
-          note.createdAt || note.created_at || new Date().toISOString(),
-        updatedAt:
-          note.updatedAt || note.updated_at || new Date().toISOString(),
-        userId: note.userId || note.user_id || "unknown",
-      }));
+      const normalizedNotes = await Promise.all(
+        (notes as any[]).map(async (note: any) => {
+          const id = note.id || note._id;
+          let existingLocal: Note | null = null;
+          try {
+            existingLocal = await storageService.getItem<Note>("NOTES", id);
+          } catch {}
+          const serverLocation =
+            note.location ||
+            (note.latitude && note.longitude
+              ? {
+                  latitude: note.latitude,
+                  longitude: note.longitude,
+                  address: note.address || note.formattedAddress || undefined,
+                }
+              : undefined);
+          return {
+            id,
+            title: note.title || "",
+            content: note.content || "",
+            tags: note.tags || [],
+            isFavorite: note.isFavorite || note.favorite || false,
+            isPublic: note.isPublic ?? note.public ?? false,
+            photos: note.photos || note.images || existingLocal?.photos || [],
+            location: serverLocation || existingLocal?.location,
+            createdAt:
+              note.createdAt || note.created_at || new Date().toISOString(),
+            updatedAt:
+              note.updatedAt || note.updated_at || new Date().toISOString(),
+            userId: note.userId || note.user_id || "unknown",
+          } as Note;
+        })
+      );
 
       const normalizedResponse: NotesResponse = {
         notes: normalizedNotes,
@@ -324,6 +343,8 @@ class NotesService {
       content: noteData.content || "",
       tags: noteData.tags || [],
       isFavorite: noteData.isFavorite || false,
+      photos: noteData.photos || [],
+      location: noteData.location,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       userId: userId || "unknown",
@@ -352,6 +373,18 @@ class NotesService {
         content: note.content || "",
         tags: note.tags || [],
         isFavorite: note.isFavorite || note.favorite || false,
+        isPublic: note.isPublic ?? note.public ?? note.visibility === "public",
+        photos: note.photos || note.images || localNote.photos || [],
+        location:
+          note.location ||
+          (note.latitude && note.longitude
+            ? {
+                latitude: note.latitude,
+                longitude: note.longitude,
+                address: note.address || note.formattedAddress || undefined,
+              }
+            : undefined) ||
+          localNote.location,
         createdAt:
           note.createdAt || note.created_at || new Date().toISOString(),
         updatedAt:
@@ -428,6 +461,21 @@ class NotesService {
           content: serverNote.content || "",
           tags: serverNote.tags || [],
           isFavorite: serverNote.isFavorite || serverNote.favorite || false,
+          photos:
+            serverNote.photos || serverNote.images || updatedNote.photos || [],
+          location:
+            serverNote.location ||
+            (serverNote.latitude && serverNote.longitude
+              ? {
+                  latitude: serverNote.latitude,
+                  longitude: serverNote.longitude,
+                  address:
+                    serverNote.address ||
+                    serverNote.formattedAddress ||
+                    undefined,
+                }
+              : undefined) ||
+            updatedNote.location,
           createdAt:
             serverNote.createdAt ||
             serverNote.created_at ||
@@ -456,7 +504,7 @@ class NotesService {
           await queueOperations.updateNote(id, updates, userId);
         }
 
-        this.addToSyncQueue(updatedNote);
+        // Keep local updated note; background sync is handled elsewhere
         return updatedNote;
       }
     } catch (error: any) {
@@ -497,42 +545,8 @@ class NotesService {
     conflicts: number;
     errors: number;
   }> {
-    if (this.isSyncing) {
-      return { synced: 0, conflicts: 0, errors: 0 };
-    }
-
-    this.isSyncing = true;
-    let synced = 0;
-    let conflicts = 0;
-    let errors = 0;
-
-    try {
-      const localNotes = await this.getLocalNotesNeedingSync();
-
-      for (const note of localNotes) {
-        try {
-          if (note.isLocalOnly) {
-            await this.syncNewNote(note);
-            synced++;
-          } else if (note.needsSync) {
-            await this.syncUpdatedNote(note);
-            synced++;
-          }
-        } catch (error: any) {
-          if (error.type === NotesErrorType.CONFLICT_ERROR) {
-            conflicts++;
-          } else {
-            errors++;
-          }
-        }
-      }
-
-      await this.syncPendingDeletes();
-    } finally {
-      this.isSyncing = false;
-    }
-
-    return { synced, conflicts, errors };
+    // Not used; kept as no-op for compatibility
+    return { synced: 0, conflicts: 0, errors: 0 };
   }
 
   private async handleUpdateConflict(
@@ -566,25 +580,7 @@ class NotesService {
     }
   }
 
-  private async getLocalNotesNeedingSync(): Promise<Note[]> {
-    return [];
-  }
-
-  private async syncNewNote(note: Note): Promise<void> {
-    // Implementation for syncing new notes to server
-  }
-
-  private async syncUpdatedNote(note: Note): Promise<void> {
-    // Implementation for syncing updated notes to server
-  }
-
-  private async syncPendingDeletes(): Promise<void> {
-    // Implementation for syncing pending deletes to server
-  }
-
-  private addToSyncQueue(note: Note): void {
-    this.syncQueue.push(note);
-  }
+  // Deprecated internal sync helpers removed as unused
 
   async searchNotesLocally(query: string): Promise<Note[]> {
     try {
@@ -639,6 +635,8 @@ class NotesService {
                   userId: noteData.userId || "unknown",
                   isLocalOnly: noteData.isLocalOnly,
                   needsSync: noteData.needsSync,
+                  photos: noteData.photos || [],
+                  location: noteData.location,
                 };
                 notes.push(note);
                 // console.log(`📝 Loaded local note: ${note.title}`);
