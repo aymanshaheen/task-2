@@ -1,6 +1,7 @@
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { View, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+
 import { FloatingActionButton } from "../common/FloatingActionButton";
 import { NetworkSnackbar } from "../common/NetworkSnackbar";
 import { SavingToast } from "../common/SavingToast";

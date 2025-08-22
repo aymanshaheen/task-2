@@ -1,13 +1,14 @@
 import React, { useMemo } from "react";
 import { SafeAreaView, View, Text, StyleSheet, ScrollView } from "react-native";
+
+import { Card } from "../../components/common/Card";
+import { KeyValueRow } from "../../components/common/KeyValueRow";
+import { SectionTitle } from "../../components/common/SectionTitle";
+import { useNotes } from "../../hooks/useNotes";
 import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
-import { useNotes } from "../../hooks/useNotes";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { Card } from "../../components/common/Card";
-import { SectionTitle } from "../../components/common/SectionTitle";
-import { KeyValueRow } from "../../components/common/KeyValueRow";
 import { formatRelativeTime } from "../../utils/dateHelpers";
 
 export function StatsScreen() {
@@ -236,71 +237,44 @@ export function StatsScreen() {
   );
 }
 
-function Row({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: { text: string; muted: string; border: string } & Record<string, any>;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-      <Text style={{ color: color.muted, fontSize: typography.size.sm }}>
-        {label}
-      </Text>
-      <Text style={{ color: color.text, fontWeight: typography.weight.medium }}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.s12,
+  badge: {
+    borderRadius: spacing.s12,
+    paddingHorizontal: spacing.s6,
+    paddingVertical: spacing.s2,
   },
-  metric: {
-    flexGrow: 1,
-    minWidth: "45%",
-    padding: spacing.s12,
+  chip: {
+    alignItems: "center",
+    borderRadius: spacing.s16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: spacing.s10,
-  },
-  metricValue: {
-    fontSize: typography.size.xl,
-    fontWeight: typography.weight.bold,
-  },
-  metricLabel: {
-    marginTop: spacing.s4,
-    fontSize: typography.size.sm,
+    flexDirection: "row",
+    gap: spacing.s8,
+    paddingHorizontal: spacing.s10,
+    paddingVertical: spacing.s6,
   },
   chipsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.s8,
   },
-  chip: {
+  grid: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.s8,
-    paddingVertical: spacing.s6,
-    paddingHorizontal: spacing.s10,
-    borderRadius: spacing.s16,
-    borderWidth: StyleSheet.hairlineWidth,
+    flexWrap: "wrap",
+    gap: spacing.s12,
   },
-  badge: {
-    paddingHorizontal: spacing.s6,
-    paddingVertical: spacing.s2,
-    borderRadius: spacing.s12,
+  metric: {
+    borderRadius: spacing.s10,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexGrow: 1,
+    minWidth: "45%",
+    padding: spacing.s12,
+  },
+  metricLabel: {
+    fontSize: typography.size.sm,
+    marginTop: spacing.s4,
+  },
+  metricValue: {
+    fontSize: typography.size.xl,
+    fontWeight: typography.weight.bold,
   },
 });

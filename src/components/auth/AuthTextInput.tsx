@@ -1,8 +1,9 @@
 import React, { useState, useRef } from "react";
 import { TextInput, Text, View, Pressable } from "react-native";
+
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { useTheme } from "../../hooks/useTheme";
 
 type ValidationState = "default" | "valid" | "invalid" | "warning";
 
@@ -109,8 +110,7 @@ export function AuthTextInput({
           secureTextEntry={actualSecureEntry}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          style={[
-            {
+          style={{
               borderWidth: focused ? 2 : 1,
               borderColor: getBorderColor(),
               backgroundColor: c.surface,
@@ -121,8 +121,7 @@ export function AuthTextInput({
               fontSize: typography.size.md,
               color: c.text,
               minHeight: 48,
-            },
-          ]}
+            }}
           placeholderTextColor={c.muted}
         />
 

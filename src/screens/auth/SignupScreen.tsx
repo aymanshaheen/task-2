@@ -7,20 +7,21 @@ import {
   Keyboard,
   ScrollView,
 } from "react-native";
+
+import { AuthTextInput } from "../../components/auth/AuthTextInput";
+import { AuthTitle } from "../../components/auth/AuthTitle";
+import { AuthToggle } from "../../components/auth/AuthToggle";
+import { ValidationMessages } from "../../components/auth/ValidationMessages";
 import { useAuth } from "../../hooks/useAuth";
-import { useTheme } from "../../hooks/useTheme";
 import {
   useAuthFormValidation,
   fieldConfigs,
 } from "../../hooks/useAuthFormValidation";
 import { useAutoSave } from "../../hooks/useAutoSave";
+import { useTheme } from "../../hooks/useTheme";
+import { cameraService } from "../../services/cameraService";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { AuthTitle } from "../../components/auth/AuthTitle";
-import { AuthTextInput } from "../../components/auth/AuthTextInput";
-import { AuthToggle } from "../../components/auth/AuthToggle";
-import { ValidationMessages } from "../../components/auth/ValidationMessages";
-import { cameraService } from "../../services/cameraService";
 
 export function SignupScreen({ navigation }: any) {
   const { signup, loading } = useAuth();
@@ -32,13 +33,9 @@ export function SignupScreen({ navigation }: any) {
     errors,
     touched,
     visibleFields,
-    isFormValid,
     passwordStrength,
     updateField,
     setFieldTouched,
-    validateForm,
-    getAllValidationErrors,
-    resetForm,
   } = useAuthFormValidation("signup");
 
   // Auto-save form data

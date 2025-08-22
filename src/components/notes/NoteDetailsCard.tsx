@@ -1,10 +1,12 @@
 import React from "react";
-import { View, Text, Image, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
+import Animated from "react-native-reanimated";
+
+import type { Note } from "../../hooks/useNotes";
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { formatRelativeTime } from "../../utils/dateHelpers";
-import type { Note } from "../../hooks/useNotes";
 
 export function NoteDetailsCard({ note }: { note: Note }) {
   const { themeStyles } = useTheme();
@@ -47,7 +49,7 @@ export function NoteDetailsCard({ note }: { note: Note }) {
               key={`${note.id}_detail_photo_${idx}`}
               style={{ marginRight: spacing.s8 }}
             >
-              <Image
+              <Animated.Image
                 source={{ uri }}
                 style={{
                   width: 200,
@@ -55,6 +57,8 @@ export function NoteDetailsCard({ note }: { note: Note }) {
                   borderRadius: spacing.s8,
                   backgroundColor: themeStyles.colors.surface,
                 }}
+                resizeMode="cover"
+                sharedTransitionTag={`${note.id}_photo_${idx}`}
               />
             </View>
           ))}

@@ -1,4 +1,3 @@
-// Base color palette and semantic roles
 export const palette = {
   white: "#FFFFFF",
   black: "#000000",
@@ -23,8 +22,6 @@ export const palette = {
   yellow400: "#FBBF24",
   yellow500: "#F59E0B",
 } as const;
-
-export type Palette = typeof palette;
 
 export const semanticColors = {
   light: {
@@ -74,5 +71,3 @@ export const semanticColors = {
     overlay: "rgba(0,0,0,0.35)",
   },
 } as const;
-
-export type SemanticColors = typeof semanticColors;

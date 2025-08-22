@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
   TouchableOpacity,
 } from "react-native";
-import { useTheme } from "../../hooks/useTheme";
+
 import { useNetworkAware } from "../../hooks/useNetworkStatus";
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 
@@ -18,13 +18,7 @@ interface NetworkSnackbarProps {
 
 export function NetworkSnackbar({ onPress }: NetworkSnackbarProps) {
   const { themeStyles } = useTheme();
-  const {
-    isOffline,
-    justCameOnline,
-    justWentOffline,
-    connectionQuality,
-    type,
-  } = useNetworkAware();
+  const { justCameOnline, justWentOffline } = useNetworkAware();
 
   const slideAnim = React.useRef(new Animated.Value(100)).current;
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
@@ -34,11 +28,6 @@ export function NetworkSnackbar({ onPress }: NetworkSnackbarProps) {
 
   useEffect(() => {
     if (shouldShow) {
-      console.log("📱 NetworkSnackbar: Showing snackbar", {
-        justCameOnline,
-        justWentOffline,
-      });
-
       // Slide up and fade in
       Animated.parallel([
         Animated.timing(slideAnim, {
@@ -55,7 +44,6 @@ export function NetworkSnackbar({ onPress }: NetworkSnackbarProps) {
 
       // Auto hide after 4.5 seconds
       const timer = setTimeout(() => {
-        console.log("📱 NetworkSnackbar: Auto-hiding snackbar");
         Animated.parallel([
           Animated.timing(slideAnim, {
             toValue: 100,
@@ -148,13 +136,13 @@ export function NetworkSnackbar({ onPress }: NetworkSnackbarProps) {
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    bottom: spacing.s16,
-    left: spacing.s16,
-    right: spacing.s16,
     borderRadius: spacing.s12,
     borderWidth: 1,
+    bottom: spacing.s16,
     elevation: 8,
+    left: spacing.s16,
+    position: "absolute",
+    right: spacing.s16,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -167,28 +155,28 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.s16,
   },
-  textContainer: {
-    alignItems: "center",
-  },
-  mainTextRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   emoji: {
     fontSize: typography.size.lg,
     marginRight: spacing.s8,
   },
+  mainTextRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+  },
   message: {
+    color: "#ffffff",
     fontSize: typography.size.md,
     fontWeight: "600",
-    color: "#ffffff",
   },
   subMessage: {
+    color: "#ffffff",
     fontSize: typography.size.sm,
     marginTop: spacing.s4,
-    color: "#ffffff",
     opacity: 0.9,
     textAlign: "center",
+  },
+  textContainer: {
+    alignItems: "center",
   },
 });

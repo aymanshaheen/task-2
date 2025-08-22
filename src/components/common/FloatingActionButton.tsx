@@ -1,7 +1,8 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
-import { globalStyles } from "../../styles/globalStyles";
+
 import { useTheme } from "../../hooks/useTheme";
+import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 
@@ -29,14 +30,14 @@ export const FloatingActionButton: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   fab: {
+    alignItems: "center",
+    borderRadius: spacing.s28,
+    bottom: spacing.s20,
+    height: spacing.s56,
+    justifyContent: "center",
     position: "absolute",
     right: spacing.s20,
-    bottom: spacing.s20,
     width: spacing.s56,
-    height: spacing.s56,
-    borderRadius: spacing.s28,
-    alignItems: "center",
-    justifyContent: "center",
     ...globalStyles.shadowSmall,
   },
   fabIcon: {

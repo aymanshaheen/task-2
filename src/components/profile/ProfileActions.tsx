@@ -1,9 +1,10 @@
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
+
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { useTheme } from "../../hooks/useTheme";
-import { useNavigation } from "@react-navigation/native";
 
 type Props = {
   onEditPhoto?: () => void;

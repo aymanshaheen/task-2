@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import { View, Text, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 
@@ -23,11 +24,11 @@ export const ErrorBanner = memo(({ message }: Props) => {
 
 const styles = StyleSheet.create({
   container: {
+    borderRadius: spacing.s6,
     borderWidth: 1,
     marginHorizontal: spacing.s12,
     marginTop: spacing.s8,
     padding: spacing.s8,
-    borderRadius: spacing.s6,
   },
   text: {},
 });

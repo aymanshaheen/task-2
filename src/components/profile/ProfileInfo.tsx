@@ -1,7 +1,8 @@
 import React from "react";
 import { View } from "react-native";
-import { KeyValueRow } from "../common/KeyValueRow";
+
 import { spacing } from "../../styles/spacing";
+import { KeyValueRow } from "../common/KeyValueRow";
 
 type Props = {
   userId: string;

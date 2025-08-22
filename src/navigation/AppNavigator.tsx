@@ -1,4 +1,3 @@
-import React from "react";
 import {
   NavigationContainer,
   DefaultTheme,
@@ -7,11 +6,15 @@ import {
   LinkingOptions,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
+
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
+import { assertTargets } from "../utils/performanceUtils";
+
 import { AuthNavigator } from "./AuthNavigator";
 import { DrawerNavigator } from "./DrawerNavigator";
 import { ProfileSetupNavigator } from "./ProfileSetupNavigator";
-import { useTheme } from "../hooks/useTheme";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -56,7 +59,27 @@ export function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme} linking={linking}>
+    <NavigationContainer
+      theme={navTheme}
+      linking={linking}
+      onReady={() => {
+        try {
+          const t0 = (global as any).__appLaunch;
+          if (t0) {
+            const ms = Date.now() - t0;
+            (global as any).__appLaunch = undefined;
+
+            assertTargets({
+              screenLoadMs: ms,
+              idleMb: undefined,
+              heavyMb: undefined,
+              fps: undefined,
+              searchMs: undefined,
+            });
+          }
+        } catch {}
+      }}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           user && (user as any).profileCompleted ? (

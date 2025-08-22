@@ -1,5 +1,6 @@
-import React from "react";
-import { View } from "react-native";
+import React, { memo, useEffect, useState } from "react";
+import { View, InteractionManager } from "react-native";
+
 import { HeaderBar } from "../common/HeaderBar";
 import { SortBar } from "../common/SortBar";
 import { TagSelector } from "../common/TagSelector";
@@ -16,7 +17,7 @@ interface NotesScreenHeaderProps {
   onChangeSelectedTags: (tags: string[]) => void;
 }
 
-export function NotesScreenHeader({
+export const NotesScreenHeader = memo(function NotesScreenHeader({
   query,
   onChangeQuery,
   showSortOptions,
@@ -27,6 +28,11 @@ export function NotesScreenHeader({
   selectedTags,
   onChangeSelectedTags,
 }: NotesScreenHeaderProps) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => setReady(true));
+    return () => task?.cancel?.();
+  }, []);
   return (
     <View>
       <HeaderBar
@@ -34,14 +40,16 @@ export function NotesScreenHeader({
         onChangeQuery={onChangeQuery}
         onPressFilter={onToggleSortOptions}
       />
-      {showSortOptions && (
+      {ready && showSortOptions && (
         <SortBar sortKey={sortKey} onChangeSortKey={onChangeSortKey} />
       )}
-      <TagSelector
-        availableTags={availableTags}
-        selectedTags={selectedTags}
-        onChangeSelected={onChangeSelectedTags}
-      />
+      {ready && (
+        <TagSelector
+          availableTags={availableTags}
+          selectedTags={selectedTags}
+          onChangeSelected={onChangeSelectedTags}
+        />
+      )}
     </View>
   );
-}
+});

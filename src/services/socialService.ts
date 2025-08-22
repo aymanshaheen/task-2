@@ -1,5 +1,6 @@
-import { getAuthToken } from "./authService";
 import { NotesErrorType } from "../enums/notes";
+
+import { getAuthToken } from "./authService";
 
 const API_BASE_URL =
   "https://react-native-lessons-api-production.up.railway.app/api";

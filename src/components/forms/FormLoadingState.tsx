@@ -1,9 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
-import { LoadingState } from "../common/LoadingState";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { LoadingState } from "../common/LoadingState";
 
 interface FormLoadingStateProps {
   isLoadingNote?: boolean;

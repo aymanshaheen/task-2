@@ -1,14 +1,19 @@
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 import { Text, StyleSheet } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+import { useNotificationCenter } from "../hooks/useNotificationCenter";
+import { useTheme } from "../hooks/useTheme";
+import OptimizedSocialScreen, {
+  preload as preloadSocial,
+} from "../optimized-screens/SocialFeed";
 import { AllNotesScreen } from "../screens/notes/AllNotesScreen";
 import { FavoritesScreen } from "../screens/notes/FavoritesScreen";
-import { SocialFeedScreen } from "../screens/social/SocialFeedScreen";
-import { useNotificationCenter } from "../hooks/useNotificationCenter";
 import { SettingsScreen } from "../screens/settings/SettingsScreen";
-import { useTheme } from "../hooks/useTheme";
-import { typography } from "../styles/typography";
+import { notesService } from "../services/notesService";
 import { spacing } from "../styles/spacing";
+import { typography } from "../styles/typography";
+import { prefetchWhenIdle } from "../utils/bundleOptimization";
 
 export type MainTabParamList = {
   All: undefined;
@@ -24,10 +29,22 @@ export function TabNavigator() {
   const c = themeStyles.colors;
   const { unreadCount } = useNotificationCenter();
 
+  React.useEffect(() => {
+    prefetchWhenIdle([
+      () => preloadSocial?.(),
+      async () => {
+        try {
+          await notesService.getNotes({ limit: 30, offset: 0 });
+        } catch {}
+      },
+    ]);
+  }, []);
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        lazy: true,
         tabBarStyle: {
           paddingTop: spacing.s6,
           paddingBottom: spacing.s4,
@@ -90,7 +107,7 @@ export function TabNavigator() {
       />
       <Tab.Screen
         name="Social"
-        component={SocialFeedScreen}
+        component={OptimizedSocialScreen}
         options={{
           title: "Social",
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,

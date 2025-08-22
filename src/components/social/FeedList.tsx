@@ -1,14 +1,13 @@
-import React from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  View,
-} from "react-native";
+import React, { memo, useCallback } from "react";
+import { ActivityIndicator, RefreshControl, View } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
-import { spacing } from "../../styles/spacing";
+import OptimizedFlatList from "../../performance/components/OptimizedFlatList";
 import { SocialFeedItem } from "../../services/socialService";
+import { spacing } from "../../styles/spacing";
+
 import { FeedItemCard } from "./FeedItemCard";
+
 
 type Props = {
   items: SocialFeedItem[];
@@ -21,7 +20,7 @@ type Props = {
   onOpenDetails: (id: string) => void;
 };
 
-export function FeedList({
+export const FeedList = memo(function FeedList({
   items,
   loading,
   hasMore,
@@ -34,22 +33,26 @@ export function FeedList({
   const { themeStyles } = useTheme();
   const c = themeStyles.colors;
 
-  const keyExtractor = (item: SocialFeedItem) => item.id;
+  const keyExtractor = useCallback((item: SocialFeedItem) => item.id, []);
 
-  const renderItem = ({ item }: { item: SocialFeedItem }) => (
-    <FeedItemCard
-      item={item}
-      onPressLike={onPressLike}
-      onOpenDetails={onOpenDetails}
-    />
+  const renderItem = useCallback(
+    ({ item }: { item: SocialFeedItem }) => (
+      <FeedItemCard
+        item={item}
+        onPressLike={onPressLike}
+        onOpenDetails={onOpenDetails}
+      />
+    ),
+    [onPressLike, onOpenDetails]
   );
 
   return (
-    <FlatList
+    <OptimizedFlatList
       data={items}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
-      onEndReachedThreshold={0.5}
+      hasMore={hasMore}
+      loadingMore={loading}
       onEndReached={() => {
         if (!loading && hasMore) onEndReached();
       }}
@@ -64,6 +67,12 @@ export function FeedList({
         ) : null
       }
       contentContainerStyle={{ paddingBottom: spacing.s16 }}
+      windowSize={13}
+      initialNumToRender={10}
+      maxToRenderPerBatch={10}
+      updateCellsBatchingPeriod={16}
+      removeClippedSubviews
+      estimatedItemHeight={120}
     />
   );
-}
+});

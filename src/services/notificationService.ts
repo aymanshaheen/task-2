@@ -1,5 +1,8 @@
-import { getAuthToken } from "./authService";
+import Constants from "expo-constants";
+
 import { NotesErrorType } from "../enums/notes";
+
+import { getAuthToken } from "./authService";
 
 const API_BASE_URL =
   "https://react-native-lessons-api-production.up.railway.app/api";
@@ -99,6 +102,10 @@ class NotificationService {
     data?: any;
   }): Promise<void> {
     try {
+      // Skip importing expo-notifications in Expo Go to avoid noisy warnings
+      if (Constants?.appOwnership === "expo") {
+        return;
+      }
       const Notifications: any = await import("expo-notifications").catch(
         () => null
       );

@@ -1,8 +1,9 @@
 import React from "react";
 import { Image, View, Text } from "react-native";
+
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { useTheme } from "../../hooks/useTheme";
 
 type Props = {
   email: string;
@@ -35,6 +36,7 @@ export function ProfileAvatar({
           borderRadius: radius,
           backgroundColor: c.chipBg,
         }}
+        resizeMode="cover"
       />
       {showLabel && (
         <Text

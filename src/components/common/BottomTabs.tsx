@@ -1,5 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -46,22 +47,22 @@ export const BottomTabs: React.FC<Props> = ({ activeTab, onChange }) => {
 };
 
 const styles = StyleSheet.create({
-  tabbar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: spacing.s64,
-    flexDirection: "row",
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
+  tabIcon: { fontSize: typography.size.lg },
   tabItem: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    flex: 1,
     gap: spacing.s2,
+    justifyContent: "center",
   },
   tabItemActive: {},
-  tabIcon: { fontSize: typography.size.lg },
   tabText: { fontSize: typography.size.xs },
+  tabbar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    bottom: 0,
+    flexDirection: "row",
+    height: spacing.s64,
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
 });

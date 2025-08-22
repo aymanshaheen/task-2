@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Alert } from "react-native";
+
 import { useNetworkStatus } from "./useNetworkStatus";
 
 export interface OfflineErrorOptions {

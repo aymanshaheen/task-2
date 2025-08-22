@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -74,10 +75,18 @@ export const SortBar: React.FC<SortBarProps> = ({
 
 const styles = StyleSheet.create({
   sortBar: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.s12,
     paddingVertical: spacing.s8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  sortChip: {
+    borderRadius: spacing.s16,
+    borderWidth: 1,
+    paddingHorizontal: spacing.s10,
+    paddingVertical: spacing.s6,
+  },
+  sortChipActive: {},
+  sortChipText: {},
   sortLabel: {
     fontSize: typography.size.xs,
     marginBottom: spacing.s6,
@@ -86,12 +95,4 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.s8,
   },
-  sortChip: {
-    borderWidth: 1,
-    paddingHorizontal: spacing.s10,
-    paddingVertical: spacing.s6,
-    borderRadius: spacing.s16,
-  },
-  sortChipActive: {},
-  sortChipText: {},
 });

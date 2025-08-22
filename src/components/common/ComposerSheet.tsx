@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -23,22 +24,22 @@ export const ComposerSheet: React.FC<Props> = ({ title, children }) => {
 };
 
 const styles = StyleSheet.create({
-  sheetOverlay: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   sheet: {
-    paddingTop: spacing.s8,
+    borderRadius: spacing.s16,
+    maxWidth: 520,
     paddingBottom: spacing.s16,
     paddingHorizontal: spacing.s12,
-    borderRadius: spacing.s16,
+    paddingTop: spacing.s8,
     width: "92%",
-    maxWidth: 520,
+  },
+  sheetOverlay: {
+    alignItems: "center",
+    bottom: 0,
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
   sheetTitle: {
     fontSize: typography.size.lg,

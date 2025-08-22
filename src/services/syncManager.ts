@@ -1,8 +1,8 @@
 import React from "react";
+
+import { notesService } from "./notesService";
 import { offlineQueueService, SyncResult } from "./offlineQueueService";
 import { storageService, cacheManager } from "./storageService";
-import { notesService } from "./notesService";
-import { Note } from "../models/notes";
 
 export interface SyncStatus {
   isOnline: boolean;
@@ -58,8 +58,6 @@ class SyncManager {
 
       this.isInitialized = true;
       this.notifyListeners();
-
-      console.log("SyncManager initialized");
     } catch (error) {
       console.error("Failed to initialize SyncManager:", error);
     }
@@ -70,7 +68,6 @@ class SyncManager {
 
     this.syncTimer = setInterval(async () => {
       if (this.syncStatus.isOnline && !this.syncStatus.syncInProgress) {
-        console.log("⏰ Auto-sync triggered");
         try {
           await this.performSync(userId);
         } catch (error) {
@@ -79,17 +76,12 @@ class SyncManager {
         }
       }
     }, this.options.syncInterval);
-
-    console.log(
-      `🔄 Auto-sync started with interval: ${this.options.syncInterval}ms`
-    );
   }
 
   stopAutoSync(): void {
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
       this.syncTimer = null;
-      console.log("Auto-sync stopped");
     }
   }
 
@@ -97,17 +89,10 @@ class SyncManager {
     const wasOffline = !this.syncStatus.isOnline;
     this.syncStatus.isOnline = isOnline;
 
-    console.log(
-      `🔄 SyncManager: Network status updated to ${
-        isOnline ? "ONLINE" : "OFFLINE"
-      }`
-    );
-
     if (wasOffline && isOnline) {
-      console.log("🟢 Network restored, preparing to sync...");
       this.scheduleImmediateSync();
     } else if (!wasOffline && !isOnline) {
-      console.log("🔴 Network lost, stopping auto-sync");
+      // no-op
     }
 
     this.notifyListeners();
@@ -126,14 +111,12 @@ class SyncManager {
     force: boolean = false
   ): Promise<SyncResult> {
     if (this.syncStatus.syncInProgress && !force) {
-      console.log("Sync already in progress, skipping...");
       return (
         this.syncStatus.lastSyncResult || { success: 0, failed: 0, errors: [] }
       );
     }
 
     if (!this.syncStatus.isOnline && !force) {
-      console.log("Cannot sync while offline");
       return { success: 0, failed: 0, errors: [] };
     }
 
@@ -141,11 +124,8 @@ class SyncManager {
     this.notifyListeners();
 
     try {
-      console.log("Starting sync process...");
-
       // Double-check online status before proceeding
       if (!this.syncStatus.isOnline && !force) {
-        console.log("Aborting sync - detected offline during sync start");
         return { success: 0, failed: 0, errors: [] };
       }
 
@@ -186,10 +166,6 @@ class SyncManager {
         this.syncStatus.lastSyncTime.toISOString()
       );
 
-      console.log(
-        `Sync completed: ${syncResult.success} successful, ${syncResult.failed} failed`
-      );
-
       return syncResult;
     } catch (error) {
       console.error("Sync failed:", error);
@@ -215,7 +191,6 @@ class SyncManager {
     try {
       // Only refresh cache if we're truly online
       if (!this.syncStatus.isOnline) {
-        console.log("Skipping cache refresh - offline");
         return;
       }
 
@@ -225,8 +200,6 @@ class SyncManager {
       // Pre-cache frequently accessed data
       await notesService.getNotes({ limit: 50 }); // Cache recent notes
       await notesService.getFavorites(); // Cache favorites
-
-      console.log("Local cache refreshed");
     } catch (error) {
       console.error("Failed to refresh local cache:", error);
       this.syncStatus.isOnline = false;
@@ -308,7 +281,6 @@ class SyncManager {
       };
 
       this.notifyListeners();
-      console.log("Sync data cleared");
     } catch (error) {
       console.error("Failed to clear sync data:", error);
     }
@@ -340,7 +312,6 @@ export function useSyncManager(userId: string | null) {
       console.warn("Cannot sync: No user ID");
       return;
     }
-    console.log("🔄 Manual sync requested");
     return await syncManager.performSync(userId, true);
   }, [userId]);
 

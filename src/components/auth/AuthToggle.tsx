@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, Pressable, Animated } from "react-native";
+
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { useTheme } from "../../hooks/useTheme";
 
 interface AuthToggleProps {
   label: string;

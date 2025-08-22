@@ -1,8 +1,10 @@
 import React from "react";
 import { View, Text } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+
 import { ProfileAvatar } from "./ProfileAvatar";
 
 type Props = {

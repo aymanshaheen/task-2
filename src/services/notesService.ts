@@ -1,6 +1,4 @@
-import { storageService, cacheManager } from "./storageService";
-import { getAuthToken } from "./authService";
-import { queueOperations } from "./offlineQueueService";
+import { NotesErrorType } from "../enums/notes";
 import {
   Note,
   CreateNoteData,
@@ -10,101 +8,16 @@ import {
   NoteResponse,
   NotesError,
 } from "../models/notes";
-import { NotesErrorType } from "../enums/notes";
 
-const API_BASE_URL =
-  "https://react-native-lessons-api-production.up.railway.app/api";
-const REQUEST_TIMEOUT = 30000;
+import { buildNotesEndpoint, normalizeNotesResponse } from "./notes/helpers";
+import { localStore } from "./notes/localStore";
+import { makeAuthenticatedRequest } from "./api/makeAuthenticatedRequest";
+import { queueOperations } from "./offlineQueueService";
+import { storageService, cacheManager } from "./storageService";
 
-export async function makeAuthenticatedRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  try {
-    const token = await getAuthToken();
+const LIST_TIMEOUT_MS = 12000;
 
-    if (!token) {
-      throw {
-        type: NotesErrorType.AUTHENTICATION_ERROR,
-        message: "No authentication token found. Please log in.",
-        retryable: false,
-      } as NotesError;
-    }
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    };
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-
-      const error: NotesError = {
-        type:
-          response.status === 401
-            ? NotesErrorType.AUTHENTICATION_ERROR
-            : response.status === 404
-            ? NotesErrorType.NOT_FOUND_ERROR
-            : response.status === 409
-            ? NotesErrorType.CONFLICT_ERROR
-            : response.status >= 400 && response.status < 500
-            ? NotesErrorType.VALIDATION_ERROR
-            : NotesErrorType.NETWORK_ERROR,
-        message: errorData.message || `HTTP Error: ${response.status}`,
-        retryable: response.status >= 500,
-      };
-
-      throw error;
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    if (error.name === "AbortError") {
-      throw {
-        type: NotesErrorType.NETWORK_ERROR,
-        message: "Request timed out. Please check your connection.",
-        retryable: true,
-      } as NotesError;
-    }
-
-    if (
-      error.message &&
-      (error.message.includes("Network request failed") ||
-        error.message.includes("fetch") ||
-        error.message.includes("connection") ||
-        error.name === "TypeError")
-    ) {
-      throw {
-        type: NotesErrorType.NETWORK_ERROR,
-        message: "Network error. Please check your connection.",
-        retryable: true,
-      } as NotesError;
-    }
-
-    if (error.type) {
-      throw error;
-    }
-
-    throw {
-      type: NotesErrorType.NETWORK_ERROR,
-      message: "An unexpected error occurred. Please try again.",
-      retryable: true,
-    } as NotesError;
-  }
-}
+export { makeAuthenticatedRequest };
 
 class NotesService {
   private isOffline = false;
@@ -117,7 +30,6 @@ class NotesService {
     const cacheKey = `notes_${JSON.stringify(filter)}`;
 
     try {
-      // Always check cache first for better performance
       const cachedData = await cacheManager.getCachedApiResponse<NotesResponse>(
         cacheKey
       );
@@ -127,13 +39,56 @@ class NotesService {
           return cachedData;
         }
 
-        const localNotes = await this.getLocalNotes(filter);
+        const localNotes = await localStore.getLocalNotes(filter);
         return {
           notes: localNotes,
           total: localNotes.length,
           hasMore: false,
         };
       }
+
+      try {
+        const endpoint = buildNotesEndpoint(filter);
+        const response: any = await makeAuthenticatedRequest<any>(
+          endpoint,
+          { method: "GET", timeoutMs: LIST_TIMEOUT_MS } as any,
+          cacheKey
+        );
+
+        if (!response || !response.data) {
+          const notModified =
+            await cacheManager.getCachedApiResponse<NotesResponse>(cacheKey);
+          if (notModified) {
+            return notModified;
+          }
+        }
+
+        const { normalizedResponse, normalizedNotes } =
+          normalizeNotesResponse(response);
+
+        await cacheManager.cacheApiResponse(
+          cacheKey,
+          normalizedResponse,
+          5 * 60 * 1000
+        );
+
+        try {
+          const headers = response.__headers as Headers | undefined;
+          const etag = headers?.get("etag") || undefined;
+          const lastModified = headers?.get("last-modified") || undefined;
+          await cacheManager.setApiMeta(cacheKey, { etag, lastModified });
+        } catch {}
+
+        (async () => {
+          for (const note of normalizedNotes) {
+            try {
+              await storageService.setItem("NOTES", note.id, note);
+            } catch (error) {}
+          }
+        })();
+
+        return normalizedResponse;
+      } catch {}
 
       if (cachedData) {
         this.fetchNotesInBackground(filter, cacheKey).catch(() => {});
@@ -144,7 +99,6 @@ class NotesService {
     } catch (error: any) {
       console.error("getNotes error:", error.message);
 
-      // Try to return cached data on error
       const cachedData = await cacheManager.getCachedApiResponse<NotesResponse>(
         cacheKey
       );
@@ -153,7 +107,7 @@ class NotesService {
       }
 
       try {
-        const localNotes = await this.getLocalNotes(filter);
+        const localNotes = await localStore.getLocalNotes(filter);
         return { notes: localNotes, total: localNotes.length, hasMore: false };
       } catch (localError) {
         throw error;
@@ -166,7 +120,7 @@ class NotesService {
 
     try {
       if (this.isOffline) {
-        const localNotes = await this.getLocalNotes({ isFavorite: true });
+        const localNotes = await localStore.getLocalNotes({ isFavorite: true });
         return {
           notes: localNotes,
           total: localNotes.length,
@@ -189,7 +143,7 @@ class NotesService {
       }
 
       try {
-        const localNotes = await this.getLocalNotes({ isFavorite: true });
+        const localNotes = await localStore.getLocalNotes({ isFavorite: true });
         return { notes: localNotes, total: localNotes.length, hasMore: false };
       } catch (localError) {
         throw error;
@@ -216,50 +170,70 @@ class NotesService {
       if (filter.sortBy) {
         queryParams.append("sortBy", filter.sortBy);
       }
+      if (typeof filter.limit === "number") {
+        queryParams.append("limit", String(filter.limit));
+      }
+      if (typeof filter.offset === "number") {
+        queryParams.append("offset", String(filter.offset));
+      }
 
       const endpoint = `/notes?${queryParams.toString()}`;
-      const response = await makeAuthenticatedRequest<any>(endpoint);
+      const response = await makeAuthenticatedRequest<any>(endpoint, {
+        method: "GET",
+        timeoutMs: LIST_TIMEOUT_MS,
+      } as any);
 
       const notes = response.data || response.notes || response || [];
 
-      const normalizedNotes = await Promise.all(
-        (notes as any[]).map(async (note: any) => {
-          const id = note.id || note._id;
-          let existingLocal: Note | null = null;
-          try {
-            existingLocal = await storageService.getItem<Note>("NOTES", id);
-          } catch {}
-          const serverLocation =
-            note.location ||
-            (note.latitude && note.longitude
-              ? {
-                  latitude: note.latitude,
-                  longitude: note.longitude,
-                  address: note.address || note.formattedAddress || undefined,
-                }
-              : undefined);
-          return {
-            id,
-            title: note.title || "",
-            content: note.content || "",
-            tags: note.tags || [],
-            isFavorite: note.isFavorite || note.favorite || false,
-            isPublic: note.isPublic ?? note.public ?? false,
-            photos: note.photos || note.images || existingLocal?.photos || [],
-            location: serverLocation || existingLocal?.location,
-            createdAt:
-              note.createdAt || note.created_at || new Date().toISOString(),
-            updatedAt:
-              note.updatedAt || note.updated_at || new Date().toISOString(),
-            userId: note.userId || note.user_id || "unknown",
-          } as Note;
-        })
-      );
+      const normalizedNotes: Note[] = (notes as any[]).map((note: any) => {
+        const id = note.id || note._id;
+        const serverLocation =
+          note.location ||
+          (note.latitude && note.longitude
+            ? {
+                latitude: note.latitude,
+                longitude: note.longitude,
+                address: note.address || note.formattedAddress || undefined,
+              }
+            : undefined);
+        return {
+          id,
+          title: note.title || "",
+          content: note.content || "",
+          tags: note.tags || [],
+          isFavorite: note.isFavorite || note.favorite || false,
+          isPublic: note.isPublic ?? note.public ?? false,
+          photos: note.photos || note.images || [],
+          location: serverLocation,
+          createdAt:
+            note.createdAt || note.created_at || new Date().toISOString(),
+          updatedAt:
+            note.updatedAt || note.updated_at || new Date().toISOString(),
+          userId: note.userId || note.user_id || "unknown",
+        } as Note;
+      });
+
+      const totalCount =
+        typeof response.total === "number"
+          ? response.total
+          : normalizedNotes.length;
+      let pagedNotes = normalizedNotes;
+      if (
+        typeof filter.offset === "number" ||
+        typeof filter.limit === "number"
+      ) {
+        const start = filter.offset || 0;
+        const limit = filter.limit || normalizedNotes.length;
+        pagedNotes = normalizedNotes.slice(start, start + limit);
+      }
 
       const normalizedResponse: NotesResponse = {
-        notes: normalizedNotes,
-        total: response.total || normalizedNotes.length,
-        hasMore: response.hasMore || false,
+        notes: pagedNotes,
+        total: totalCount,
+        hasMore:
+          typeof response.hasMore === "boolean"
+            ? response.hasMore
+            : (filter.offset || 0) + (pagedNotes?.length || 0) < totalCount,
       };
 
       await cacheManager.cacheApiResponse(
@@ -268,16 +242,13 @@ class NotesService {
         5 * 60 * 1000
       );
 
-      for (const note of normalizedNotes) {
-        try {
-          await storageService.setItem("NOTES", note.id, note);
-        } catch (error) {
-          console.warn(
-            `Failed to save note ${note.id} to local storage:`,
-            error
-          );
+      (async () => {
+        for (const note of normalizedNotes) {
+          try {
+            await storageService.setItem("NOTES", note.id, note);
+          } catch (error) {}
         }
-      }
+      })();
 
       return normalizedResponse;
     } catch (error: any) {
@@ -309,7 +280,6 @@ class NotesService {
         `/notes/${id}`
       );
 
-      // Ensure the response has a valid note
       if (!response || !response.note || !response.note.id) {
         throw {
           type: NotesErrorType.NOT_FOUND_ERROR,
@@ -336,7 +306,6 @@ class NotesService {
   }
 
   async createNote(noteData: CreateNoteData, userId?: string): Promise<Note> {
-    // Create local note immediately for offline-first experience
     const localNote: Note = {
       id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       title: noteData.title || "",
@@ -392,7 +361,6 @@ class NotesService {
         userId: note.userId || note.user_id || "unknown",
       };
 
-      // Replace local note with server note
       await storageService.removeItem("NOTES", localNote.id);
       await storageService.setItem("NOTES", normalizedNote.id, normalizedNote);
 
@@ -430,10 +398,8 @@ class NotesService {
         needsSync: true,
       };
 
-      // Always save locally first
       await storageService.setItem("NOTES", id, updatedNote);
 
-      // If offline, queue the operation
       if (this.isOffline && userId) {
         await queueOperations.updateNote(id, updates, userId);
         return updatedNote;
@@ -540,15 +506,6 @@ class NotesService {
     }
   }
 
-  async syncNotes(): Promise<{
-    synced: number;
-    conflicts: number;
-    errors: number;
-  }> {
-    // Not used; kept as no-op for compatibility
-    return { synced: 0, conflicts: 0, errors: 0 };
-  }
-
   private async handleUpdateConflict(
     noteId: string,
     localNote: Note,
@@ -577,170 +534,6 @@ class NotesService {
     } catch (error: any) {
       console.warn("Failed to resolve conflict, using local note:", error);
       return localNote;
-    }
-  }
-
-  // Deprecated internal sync helpers removed as unused
-
-  async searchNotesLocally(query: string): Promise<Note[]> {
-    try {
-      const allNotes = await this.getAllLocalNotes();
-
-      const searchTerms = query.toLowerCase().split(" ");
-
-      return allNotes.filter((note) => {
-        const searchableText = `${note.title} ${note.content} ${note.tags.join(
-          " "
-        )}`.toLowerCase();
-        return searchTerms.every((term) => searchableText.includes(term));
-      });
-    } catch (error: any) {
-      return [];
-    }
-  }
-
-  private async getAllLocalNotes(): Promise<Note[]> {
-    try {
-      // Try to get notes from AsyncStorage directly with better error handling
-      const notes: Note[] = [];
-
-      try {
-        const AsyncStorage = (
-          await import("@react-native-async-storage/async-storage")
-        ).default;
-        const allKeys = await AsyncStorage.getAllKeys();
-
-        // Filter for note-related keys (storageService uses @notes_ prefix)
-        const noteKeys = allKeys.filter((key) => key.startsWith("@notes_"));
-        console.log(`📦 Found ${noteKeys.length} local note keys`);
-
-        for (const fullKey of noteKeys) {
-          try {
-            const rawData = await AsyncStorage.getItem(fullKey);
-            if (rawData) {
-              const wrappedData = JSON.parse(rawData);
-              // Handle storageService wrapped format
-              const noteData = wrappedData.data || wrappedData;
-
-              if (noteData && noteData.id && noteData.title !== undefined) {
-                // Ensure the note has the correct structure
-                const note: Note = {
-                  id: noteData.id,
-                  title: noteData.title || "",
-                  content: noteData.content || "",
-                  tags: noteData.tags || [],
-                  isFavorite: noteData.isFavorite || false,
-                  createdAt: noteData.createdAt || new Date().toISOString(),
-                  updatedAt: noteData.updatedAt || new Date().toISOString(),
-                  userId: noteData.userId || "unknown",
-                  isLocalOnly: noteData.isLocalOnly,
-                  needsSync: noteData.needsSync,
-                  photos: noteData.photos || [],
-                  location: noteData.location,
-                };
-                notes.push(note);
-                // console.log(`📝 Loaded local note: ${note.title}`);
-              }
-            }
-          } catch (parseError) {
-            console.warn(
-              `Failed to parse note from key ${fullKey}:`,
-              parseError
-            );
-          }
-        }
-      } catch (asyncStorageError) {
-        // Silently handle AsyncStorage errors
-      }
-
-      // Remove duplicates and sort by updatedAt descending
-      const uniqueNotes = notes.filter(
-        (note, index, arr) => arr.findIndex((n) => n.id === note.id) === index
-      );
-
-      const sortedNotes = uniqueNotes.sort(
-        (a, b) =>
-          new Date(b.updatedAt || 0).getTime() -
-          new Date(a.updatedAt || 0).getTime()
-      );
-
-      console.log(
-        `📝 getAllLocalNotes: returning ${sortedNotes.length} unique notes`
-      );
-      return sortedNotes;
-    } catch (error) {
-      console.error("Failed to get local notes:", error);
-      return [];
-    }
-  }
-
-  private async getLocalNotes(filter: NotesFilter = {}): Promise<Note[]> {
-    try {
-      const allNotes = await this.getAllLocalNotes();
-
-      let filteredNotes = allNotes;
-
-      // Apply filters
-      if (filter.isFavorite !== undefined) {
-        filteredNotes = filteredNotes.filter(
-          (note) => note.isFavorite === filter.isFavorite
-        );
-      }
-
-      if (filter.tags && filter.tags.length > 0) {
-        filteredNotes = filteredNotes.filter((note) =>
-          filter.tags!.some((tag) => note.tags.includes(tag))
-        );
-      }
-
-      if (filter.searchQuery) {
-        const query = filter.searchQuery.toLowerCase();
-        filteredNotes = filteredNotes.filter(
-          (note) =>
-            note.title.toLowerCase().includes(query) ||
-            note.content.toLowerCase().includes(query) ||
-            note.tags.some((tag) => tag.toLowerCase().includes(query))
-        );
-      }
-
-      // Apply sorting
-      if (filter.sortBy) {
-        filteredNotes.sort((a, b) => {
-          const order = filter.sortOrder === "asc" ? 1 : -1;
-          switch (filter.sortBy) {
-            case "title":
-              return order * a.title.localeCompare(b.title);
-            case "createdAt":
-              return (
-                order *
-                (new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime())
-              );
-            case "updatedAt":
-            default:
-              return (
-                order *
-                (new Date(a.updatedAt || 0).getTime() -
-                  new Date(b.updatedAt || 0).getTime())
-              );
-          }
-        });
-      }
-
-      // Apply pagination
-      let startIndex = 0;
-      if (filter.offset) {
-        startIndex = filter.offset;
-      }
-
-      if (filter.limit) {
-        return filteredNotes.slice(startIndex, startIndex + filter.limit);
-      }
-
-      return filteredNotes.slice(startIndex);
-    } catch (error) {
-      console.error("Failed to get filtered local notes:", error);
-      return [];
     }
   }
 }

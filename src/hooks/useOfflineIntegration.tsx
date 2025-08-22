@@ -1,9 +1,12 @@
 import { useEffect, useCallback, useMemo } from "react";
+
+import { notesService } from "../services/notesService";
+import { useSyncManager } from "../services/syncManager";
+
 import { useAuth } from "./useAuth";
 import { useNetworkAware } from "./useNetworkStatus";
-import { useSyncManager } from "../services/syncManager";
 import { useOfflineErrorHandler } from "./useOfflineErrorHandler";
-import { notesService } from "../services/notesService";
+
 
 export function useOfflineIntegration() {
   const { user } = useAuth();
@@ -20,11 +23,6 @@ export function useOfflineIntegration() {
   // Update network status for all services
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log(
-        `🔄 Network status update: ${
-          networkStatus.isOffline ? "OFFLINE" : "ONLINE"
-        }`
-      );
       notesService.setOfflineStatus(networkStatus.isOffline);
       updateNetworkStatus(!networkStatus.isOffline);
     }, 100); // Small debounce to prevent rapid updates
@@ -78,7 +76,6 @@ export function useOfflineIntegration() {
 
   useEffect(() => {
     if (networkStatus.justCameOnline && user?.id) {
-      console.log("Network restored, performing automatic sync...");
       const timer = setTimeout(() => {
         performSyncWithErrorHandling().catch((error) => {
           console.error("Auto-sync failed:", error);
@@ -92,12 +89,10 @@ export function useOfflineIntegration() {
   // Manage auto-sync lifecycle
   useEffect(() => {
     if (user?.id && !networkStatus.isOffline) {
-      console.log("🔄 Starting auto-sync (user online)");
       startAutoSync().catch((error) => {
         console.error("Failed to start auto-sync:", error);
       });
     } else if (networkStatus.isOffline) {
-      console.log("🔄 Stopping auto-sync (offline)");
       stopAutoSync();
     }
 

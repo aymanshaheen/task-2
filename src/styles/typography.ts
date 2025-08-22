@@ -28,5 +28,3 @@ export const typography = {
     wide: 0.2,
   },
 } as const;
-
-export type Typography = typeof typography;

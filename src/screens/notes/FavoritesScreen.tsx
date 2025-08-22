@@ -1,25 +1,24 @@
-import React, { useMemo, useState, useCallback } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useMemo, useCallback } from "react";
 import {
   SafeAreaView,
   StatusBar,
-  TouchableOpacity,
-  Text,
   StyleSheet,
   Alert,
 } from "react-native";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useNotes } from "../../hooks/useNotes";
-import { useTheme } from "../../hooks/useTheme";
-import { useOfflineIntegration } from "../../hooks/useOfflineIntegration";
-import { globalStyles } from "../../styles/globalStyles";
-import { NotesList } from "../../components/notes/NotesList";
+
 import { EmptyState } from "../../components/common/EmptyState";
-import { LoadingState } from "../../components/common/LoadingState";
 import { ErrorText } from "../../components/common/ErrorText";
-import { SavingToast } from "../../components/common/SavingToast";
-import { NetworkSnackbar } from "../../components/common/NetworkSnackbar";
-import { spacing } from "../../styles/spacing";
 import { FloatingActionButton } from "../../components/common/FloatingActionButton";
+import { LoadingState } from "../../components/common/LoadingState";
+import { NetworkSnackbar } from "../../components/common/NetworkSnackbar";
+import { SavingToast } from "../../components/common/SavingToast";
+import { NotesList } from "../../components/notes/NotesList";
+import { useNotes } from "../../hooks/useNotes";
+import { useOfflineIntegration } from "../../hooks/useOfflineIntegration";
+import { useTheme } from "../../hooks/useTheme";
+import { globalStyles } from "../../styles/globalStyles";
+import { spacing } from "../../styles/spacing";
 
 export function FavoritesScreen() {
   const navigation = useNavigation();
@@ -39,18 +38,12 @@ export function FavoritesScreen() {
     refreshing,
     saving,
   } = useNotes();
-  const {
-    isOffline,
-    syncStatus,
-    performSync,
-    hasPendingOperations,
-    isSyncing,
-  } = useOfflineIntegration();
+  const { isOffline, syncStatus, hasPendingOperations } =
+    useOfflineIntegration();
 
   // Fetch favorites from API whenever this tab is focused
   useFocusEffect(
     useCallback(() => {
-      console.log("FavoritesScreen focused - loading favorites from API");
       loadFavorites();
     }, [loadFavorites])
   );
@@ -62,12 +55,7 @@ export function FavoritesScreen() {
 
   // Debug favorites updates
   React.useEffect(() => {
-    console.log(
-      `FavoritesScreen: favorites updated - count: ${trueFavorites.length}`
-    );
-    trueFavorites.forEach((fav, index) => {
-      console.log(`  ${index}: ${fav.title} (isFavorite: ${fav.isFavorite})`);
-    });
+    // favorites updated
   }, [trueFavorites]);
 
   return (

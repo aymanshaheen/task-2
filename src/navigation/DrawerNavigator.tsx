@@ -1,23 +1,27 @@
-import React from "react";
-import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import {
   createDrawerNavigator,
   DrawerContentScrollView,
   DrawerItemList,
   DrawerToggleButton,
 } from "@react-navigation/drawer";
-import { View, Text, Switch, TouchableOpacity, StyleSheet } from "react-native";
-import { TabNavigator } from "./TabNavigator";
-import { ProfileScreen } from "../screens/settings/ProfileScreen";
-import { StatsScreen } from "../screens/settings/StatsScreen";
-import { HelpScreen } from "../screens/settings/HelpScreen";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
+import React from "react";
+import { View, Text, Switch, TouchableOpacity } from "react-native";
+
 import { useTheme } from "../hooks/useTheme";
+import { MapPickerScreen } from "../screens/common/MapPickerScreen";
+import { AddNoteScreen } from "../screens/notes/AddNoteScreen";
 import { NoteDetailsScreen } from "../screens/notes/NoteDetailsScreen";
 import { SearchScreen } from "../screens/notes/SearchScreen";
-import { AddNoteScreen } from "../screens/notes/AddNoteScreen";
-import { MapPickerScreen } from "../screens/common/MapPickerScreen";
 import { spacing } from "../styles/spacing";
 import { typography } from "../styles/typography";
+import {
+  withSuspense,
+  lazyComponent,
+  prefetchWhenIdle,
+} from "../utils/bundleOptimization";
+
+import { TabNavigator } from "./TabNavigator";
 
 export type DrawerParamList = {
   Home: undefined;
@@ -36,6 +40,37 @@ export type DrawerParamList = {
 };
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
+
+function ScreenFallback() {
+  const { themeStyles } = useTheme();
+  const c = themeStyles.colors;
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: c.background,
+      }}
+    >
+      <Text style={{ color: c.muted }}>Loading…</Text>
+    </View>
+  );
+}
+
+// Lazy components for non-primary routes
+const LazyProfile = lazyComponent(
+  () => import("../screens/settings/ProfileScreen"),
+  (m: any) => (m as any).ProfileScreen
+);
+const LazyStats = lazyComponent(
+  () => import("../screens/settings/StatsScreen"),
+  (m: any) => (m as any).StatsScreen
+);
+const LazyHelp = lazyComponent(
+  () => import("../screens/settings/HelpScreen"),
+  (m: any) => (m as any).HelpScreen
+);
 
 function CustomDrawerContent(props: any) {
   const { themeStyles, theme, toggleTheme } = useTheme();
@@ -88,6 +123,25 @@ function CustomDrawerContent(props: any) {
 export function DrawerNavigator() {
   const { themeStyles, theme } = useTheme();
   const c = themeStyles.colors;
+  React.useEffect(() => {
+    prefetchWhenIdle([
+      () => (LazyProfile as any)?.preload?.(),
+      () => (LazyStats as any)?.preload?.(),
+      () => (LazyHelp as any)?.preload?.(),
+    ]);
+  }, []);
+  const ProfileComp = React.useMemo(
+    () => withSuspense(LazyProfile, ScreenFallback),
+    []
+  );
+  const StatsComp = React.useMemo(
+    () => withSuspense(LazyStats, ScreenFallback),
+    []
+  );
+  const HelpComp = React.useMemo(
+    () => withSuspense(LazyHelp, ScreenFallback),
+    []
+  );
   return (
     <Drawer.Navigator
       initialRouteName="Home"
@@ -151,17 +205,17 @@ export function DrawerNavigator() {
       />
       <Drawer.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileComp as any}
         options={{ title: "User Profile" }}
       />
       <Drawer.Screen
         name="Stats"
-        component={StatsScreen}
+        component={StatsComp as any}
         options={{ title: "App Statistics" }}
       />
       <Drawer.Screen
         name="Help"
-        component={HelpScreen}
+        component={HelpComp as any}
         options={{ title: "About & Help" }}
       />
       <Drawer.Screen

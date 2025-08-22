@@ -6,15 +6,16 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { globalStyles } from "../../styles/globalStyles";
-import { spacing } from "../../styles/spacing";
-import { typography } from "../../styles/typography";
-import { useTheme } from "../../hooks/useTheme";
 import {
   RichEditor,
   RichToolbar,
   actions,
 } from "react-native-pell-rich-editor";
+
+import { useTheme } from "../../hooks/useTheme";
+import { globalStyles } from "../../styles/globalStyles";
+import { spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 type Props = {
   onSave: (note: {
@@ -155,34 +156,38 @@ export const NoteEditor = ({
 };
 
 const styles = StyleSheet.create({
+  author: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    fontSize: typography.size.sm,
+    marginBottom: spacing.s8,
+    paddingBottom: spacing.s8,
+  },
+  cancelBtn: {},
   container: {
+    borderRadius: spacing.s8,
     margin: spacing.s12,
     padding: spacing.s12,
-    borderRadius: spacing.s8,
     ...globalStyles.shadowSmall,
-  },
-  author: {
-    fontSize: typography.size.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: spacing.s8,
-    marginBottom: spacing.s8,
-  },
-  title: {
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.medium,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: spacing.s8,
   },
   content: {
     marginTop: spacing.s8,
     minHeight: 100,
     textAlignVertical: "top",
   },
+  counter: {
+    fontSize: typography.size.xs,
+  },
   editorContainer: {
-    marginTop: spacing.s8,
-    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: spacing.s6,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginTop: spacing.s8,
     overflow: "hidden",
+  },
+  footer: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: spacing.s8,
   },
   richEditor: {
     minHeight: 140,
@@ -190,27 +195,23 @@ const styles = StyleSheet.create({
   richToolbar: {
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  tags: {
-    marginTop: spacing.s8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: spacing.s8,
-  },
-  footer: {
-    marginTop: spacing.s8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  counter: {
-    fontSize: typography.size.xs,
-  },
   saveBtn: {
+    borderRadius: spacing.s6,
     paddingHorizontal: spacing.s12,
     paddingVertical: spacing.s8,
-    borderRadius: spacing.s6,
   },
-  cancelBtn: {},
   saveText: {
     fontWeight: typography.weight.medium,
+  },
+  tags: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: spacing.s8,
+    paddingTop: spacing.s8,
+  },
+  title: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.medium,
+    paddingBottom: spacing.s8,
   },
 });

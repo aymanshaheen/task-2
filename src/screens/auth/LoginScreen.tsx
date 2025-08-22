@@ -1,32 +1,24 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Alert, Keyboard } from "react-native";
-import { useAuth } from "../../hooks/useAuth";
-import { useTheme } from "../../hooks/useTheme";
-import { useAuthFormValidation } from "../../hooks/useAuthFormValidation";
-import { useAutoSave } from "../../hooks/useAutoSave";
-import { spacing } from "../../styles/spacing";
-import { typography } from "../../styles/typography";
-import { AuthTitle } from "../../components/auth/AuthTitle";
+
 import { AuthTextInput } from "../../components/auth/AuthTextInput";
+import { AuthTitle } from "../../components/auth/AuthTitle";
 import { AuthToggle } from "../../components/auth/AuthToggle";
 import { ValidationMessages } from "../../components/auth/ValidationMessages";
+import { useAuth } from "../../hooks/useAuth";
+import { useAuthFormValidation } from "../../hooks/useAuthFormValidation";
+import { useAutoSave } from "../../hooks/useAutoSave";
+import { useTheme } from "../../hooks/useTheme";
+import { spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 export function LoginScreen({ navigation }: any) {
   const { login, loading } = useAuth();
   const { themeStyles } = useTheme();
   const c = themeStyles.colors;
 
-  const {
-    formData,
-    errors,
-    touched,
-    isFormValid,
-    updateField,
-    setFieldTouched,
-    validateForm,
-    getAllValidationErrors,
-    resetForm,
-  } = useAuthFormValidation("login");
+  const { formData, errors, touched, updateField, setFieldTouched } =
+    useAuthFormValidation("login");
 
   // Auto-save form data
   const {

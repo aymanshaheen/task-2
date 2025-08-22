@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, Modal, ScrollView } from "react-native";
+
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { useTheme } from "../../hooks/useTheme";
 
 interface Option {
   label: string;

@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { typography } from "../../styles/typography";
+
 import { useTheme } from "../../hooks/useTheme";
+import { typography } from "../../styles/typography";
 
 export function KeyValueRow({
   label,

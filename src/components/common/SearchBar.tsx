@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -18,9 +19,8 @@ type Props = {
 
 export const SearchBar = memo(
   ({ value, onChangeText, onPressFilter }: Props) => {
-    const { theme, themeStyles } = useTheme();
+    const { themeStyles } = useTheme();
     const c = themeStyles.colors;
-    const isDark = theme === "dark";
     return (
       <View style={[styles.container, { backgroundColor: c.surface }]}>
         <TextInput
@@ -47,24 +47,24 @@ export const SearchBar = memo(
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    marginRight: spacing.s8,
-    borderRadius: spacing.s8,
-    paddingHorizontal: spacing.s10,
-    flexDirection: "row",
     alignItems: "center",
-  },
-  input: {
-    height: spacing.s40,
+    borderRadius: spacing.s8,
     flex: 1,
+    flexDirection: "row",
+    marginRight: spacing.s8,
+    paddingHorizontal: spacing.s10,
   },
   filterButton: {
-    width: spacing.s36,
-    height: spacing.s36,
     alignItems: "center",
+    height: spacing.s36,
     justifyContent: "center",
+    width: spacing.s36,
   },
   filterIcon: {
     fontSize: typography.size.md,
+  },
+  input: {
+    flex: 1,
+    height: spacing.s40,
   },
 });

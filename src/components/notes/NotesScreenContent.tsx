@@ -1,10 +1,11 @@
-import React from "react";
-import { View } from "react-native";
+import React, { memo } from "react";
+
 import type { Note } from "../../hooks/useNotes";
 import type { NotesError } from "../../models/notes";
-import { LoadingState } from "../common/LoadingState";
-import { ErrorText } from "../common/ErrorText";
 import { EmptyState } from "../common/EmptyState";
+import { ErrorText } from "../common/ErrorText";
+import { LoadingState } from "../common/LoadingState";
+
 import { NotesList } from "./NotesList";
 
 interface NotesScreenContentProps {
@@ -14,6 +15,9 @@ interface NotesScreenContentProps {
   allNotes: Note[];
   refreshing: boolean;
   onRefresh: () => void;
+  onEndReached?: () => void;
+  loadingMore?: boolean;
+  hasMore?: boolean;
   onUpdate: (noteId: string, updates: Partial<Note>) => Promise<void>;
   onDelete: (noteId: string) => Promise<void>;
   onTogglePin: (noteId: string) => Promise<void>;
@@ -21,13 +25,16 @@ interface NotesScreenContentProps {
   tintColor: string;
 }
 
-export function NotesScreenContent({
+export const NotesScreenContent = memo(function NotesScreenContent({
   loading,
   error,
   notes,
   allNotes,
   refreshing,
   onRefresh,
+  onEndReached,
+  loadingMore,
+  hasMore,
   onUpdate,
   onDelete,
   onTogglePin,
@@ -64,6 +71,9 @@ export function NotesScreenContent({
       refreshing={refreshing}
       onRefresh={onRefresh}
       tintColor={tintColor}
+      onEndReached={onEndReached}
+      loadingMore={loadingMore}
+      hasMore={hasMore}
     />
   );
-}
+});

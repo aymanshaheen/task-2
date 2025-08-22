@@ -1,24 +1,29 @@
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   SafeAreaView,
   StatusBar,
   Platform,
   UIManager,
-  StyleSheet,
+  InteractionManager,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useTheme } from "../../hooks/useTheme";
+
+import { NotesScreenActions } from "../../components/notes/NotesScreenActions";
+import { NotesScreenContent } from "../../components/notes/NotesScreenContent";
+import { NotesScreenHeader } from "../../components/notes/NotesScreenHeader";
 import { useNotes } from "../../hooks/useNotes";
 import type { Note } from "../../hooks/useNotes";
-import { useSearch } from "../../hooks/useSearch";
 import { useOfflineIntegration } from "../../hooks/useOfflineIntegration";
+import { useSearch } from "../../hooks/useSearch";
+import { useTheme } from "../../hooks/useTheme";
+import { usePerformanceMonitoring } from "../../performance/hooks/usePerformanceMonitoring";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
-import { NotesScreenHeader } from "../../components/notes/NotesScreenHeader";
-import { NotesScreenContent } from "../../components/notes/NotesScreenContent";
-import { NotesScreenActions } from "../../components/notes/NotesScreenActions";
+import { measureScreenTransition } from "../../utils/performanceUtils";
 
 export function AllNotesScreen() {
+  const navigation = useNavigation<any>();
+
   useEffect(() => {
     if (
       Platform.OS === "android" &&
@@ -29,10 +34,16 @@ export function AllNotesScreen() {
     }
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = measureScreenTransition(navigation, "all_notes");
+    return () => unsubscribe?.();
+  }, [navigation]);
+
   const { theme, themeStyles } = useTheme();
   const {
     notes,
     loadNotes,
+    loadMore,
     createNote,
     updateNote,
     deleteNote,
@@ -42,28 +53,24 @@ export function AllNotesScreen() {
     tags,
     error,
     loading,
+    loadingMore,
     refreshing,
     saving,
-  } = useNotes();
-  const {
-    isOffline,
-    syncStatus,
-    performSync,
-    hasPendingOperations,
-    isSyncing,
-  } = useOfflineIntegration();
+    hasMore,
+  } = useNotes({ autoLoad: false });
+  const { isOffline, syncStatus, hasPendingOperations } =
+    useOfflineIntegration();
   const { query, setQuery, filteredNotes, selectedTags, setSelectedTags } =
     useSearch(notes);
 
-  // Fetch notes every time this tab is focused - online or offline
+  usePerformanceMonitoring("all_notes_screen");
+
   useFocusEffect(
     useCallback(() => {
-      console.log(
-        `📱 AllNotesScreen focused - loading notes (${
-          isOffline ? "offline" : "online"
-        } mode)`
-      );
-      loadNotes();
+      const task = InteractionManager.runAfterInteractions(() => {
+        loadNotes();
+      });
+      return () => task?.cancel?.();
     }, [loadNotes, isOffline])
   );
 
@@ -73,40 +80,40 @@ export function AllNotesScreen() {
   );
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
 
-  const handleSortKeyChange = (key: "date" | "title" | "favorites") => {
-    setSortKey(key);
-    setHasUserSelectedSort(true);
-  };
+  const handleSortKeyChange = useCallback(
+    (key: "date" | "title" | "favorites") => {
+      setSortKey(key);
+      setHasUserSelectedSort(true);
+    },
+    []
+  );
 
   const list = useMemo(() => {
-    const copy = [...filteredNotes];
-
-    if (hasUserSelectedSort) {
-      if (sortKey === "title") {
-        copy.sort((a, b) =>
-          a.title.localeCompare(b.title, undefined, {
-            sensitivity: "base",
-            numeric: true,
-          })
+    if (!hasUserSelectedSort) return filteredNotes;
+    const copy = filteredNotes.slice();
+    if (sortKey === "title") {
+      copy.sort((a, b) =>
+        a.title.localeCompare(b.title, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        })
+      );
+    } else if (sortKey === "favorites") {
+      copy.sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return (
+          new Date(b.updatedAt || new Date().toISOString()).getTime() -
+          new Date(a.updatedAt || new Date().toISOString()).getTime()
         );
-      } else if (sortKey === "favorites") {
-        copy.sort((a, b) => {
-          if (a.isFavorite && !b.isFavorite) return -1;
-          if (!a.isFavorite && b.isFavorite) return 1;
-          return (
-            new Date(b.updatedAt || new Date().toISOString()).getTime() -
-            new Date(a.updatedAt || new Date().toISOString()).getTime()
-          );
-        });
-      } else if (sortKey === "date") {
-        copy.sort(
-          (a, b) =>
-            new Date(b.updatedAt || new Date().toISOString()).getTime() -
-            new Date(a.updatedAt || new Date().toISOString()).getTime()
-        );
-      }
+      });
+    } else if (sortKey === "date") {
+      copy.sort(
+        (a, b) =>
+          new Date(b.updatedAt || new Date().toISOString()).getTime() -
+          new Date(a.updatedAt || new Date().toISOString()).getTime()
+      );
     }
-
     return copy;
   }, [filteredNotes, sortKey, hasUserSelectedSort]);
 
@@ -141,6 +148,9 @@ export function AllNotesScreen() {
         allNotes={notes}
         refreshing={refreshing}
         onRefresh={refreshNotes}
+        onEndReached={loadMore}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
         onUpdate={updateNote}
         onDelete={deleteNote}
         onTogglePin={togglePin}
@@ -158,5 +168,3 @@ export function AllNotesScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({});

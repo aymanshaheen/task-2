@@ -1,5 +1,6 @@
+import { CreateNoteData, UpdateNoteData } from "../models/notes";
+
 import { storageService } from "./storageService";
-import { Note, CreateNoteData, UpdateNoteData } from "../models/notes";
 
 export interface QueuedOperation {
   id: string;
@@ -45,10 +46,6 @@ class OfflineQueueService {
       const updatedQueue = [...currentQueue, queuedOperation];
 
       await storageService.setItem("TEMP", QUEUE_STORAGE_KEY, updatedQueue);
-
-      console.log(
-        `📤 Added operation to offline queue: ${operation.type} (Queue size: ${updatedQueue.length})`
-      );
     } catch (error) {
       console.error("❌ Failed to add operation to offline queue:", error);
     }
@@ -70,7 +67,6 @@ class OfflineQueueService {
   async clearQueue(): Promise<void> {
     try {
       await storageService.removeItem("TEMP", QUEUE_STORAGE_KEY);
-      console.log("Offline queue cleared");
     } catch (error) {
       console.error("Failed to clear offline queue:", error);
     }
@@ -91,12 +87,10 @@ class OfflineQueueService {
     isOnline: boolean = true
   ): Promise<SyncResult> {
     if (this.syncInProgress) {
-      console.log("Sync already in progress, skipping...");
       return { success: 0, failed: 0, errors: [] };
     }
 
     if (!isOnline) {
-      console.log("Cannot sync operations while offline");
       return { success: 0, failed: 0, errors: [] };
     }
 
@@ -108,22 +102,17 @@ class OfflineQueueService {
       const userOperations = queue.filter((op) => op.userId === userId);
 
       if (userOperations.length === 0) {
-        console.log("No offline operations to sync");
         return result;
       }
-
-      console.log(`🔄 Syncing ${userOperations.length} offline operations...`);
 
       // Sort operations by timestamp to maintain order
       userOperations.sort((a, b) => a.timestamp - b.timestamp);
 
       for (const operation of userOperations) {
         try {
-          console.log(`🔄 Executing ${operation.type}...`);
           await this.executeOperation(operation);
           await this.removeOperation(operation.id);
           result.success++;
-          console.log(`✅ Successfully synced operation: ${operation.type}`);
         } catch (error: any) {
           console.error(
             `❌ Failed to sync operation ${operation.type}:`,
@@ -132,9 +121,6 @@ class OfflineQueueService {
 
           // If it's a network error and we're not forced, stop trying
           if (error?.type === "NETWORK_ERROR" && !isOnline) {
-            console.log(
-              `🔴 Network error during sync, operation will retry when online: ${operation.type}`
-            );
             result.failed++;
             result.errors.push({ operation, error });
             continue; // Don't increment retry count for network errors when offline
@@ -146,9 +132,6 @@ class OfflineQueueService {
             await this.removeOperation(operation.id);
             result.failed++;
             result.errors.push({ operation, error });
-            console.log(
-              `Removed failed operation after ${operation.maxRetries} retries: ${operation.type}`
-            );
           } else {
             const currentQueue = await this.getQueue();
             const updatedQueue = currentQueue.map((op) =>
@@ -168,10 +151,6 @@ class OfflineQueueService {
 
         await this.delay(500);
       }
-
-      console.log(
-        `Sync completed: ${result.success} successful, ${result.failed} failed`
-      );
 
       this.notifySyncListeners(result);
 
@@ -213,7 +192,6 @@ class OfflineQueueService {
         method: "POST",
         body: JSON.stringify(noteData),
       });
-      console.log("Sync: Note created successfully via queue");
     } catch (error) {
       console.error("Sync: Failed to create note via queue:", error);
       throw error;
@@ -233,7 +211,6 @@ class OfflineQueueService {
         method: "PUT",
         body: JSON.stringify(updates),
       });
-      console.log("Sync: Note updated successfully via queue");
     } catch (error) {
       console.error("Sync: Failed to update note via queue:", error);
       throw error;
@@ -249,7 +226,6 @@ class OfflineQueueService {
       await makeAuthenticatedRequest<any>(`/notes/${noteId}`, {
         method: "DELETE",
       });
-      console.log("Sync: Note deleted successfully via queue");
     } catch (error) {
       console.error("Sync: Failed to delete note via queue:", error);
       throw error;
@@ -282,7 +258,6 @@ class OfflineQueueService {
         method: "PUT",
         body: JSON.stringify({ ...note, isFavorite }),
       });
-      console.log("Sync: Note favorite status updated successfully via queue");
     } catch (error) {
       console.error("Sync: Failed to toggle favorite via queue:", error);
       throw error;

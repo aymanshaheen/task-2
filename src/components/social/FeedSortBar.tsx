@@ -1,9 +1,10 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
+
+import { SortKey } from "../../enums/social";
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { SortKey } from "../../enums/social";
 
 type Props = {
   sort: SortKey;

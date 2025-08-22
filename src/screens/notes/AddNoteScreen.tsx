@@ -1,3 +1,8 @@
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -7,24 +12,20 @@ import {
   SafeAreaView,
   StatusBar,
 } from "react-native";
-import {
-  useNavigation,
-  useRoute,
-  useFocusEffect,
-} from "@react-navigation/native";
-import { useTheme } from "../../hooks/useTheme";
-import { useNotes } from "../../hooks/useNotes";
-import { useNoteFormValidation } from "../../hooks/useNoteFormValidation";
-import { useOfflineIntegration } from "../../hooks/useOfflineIntegration";
-import { spacing } from "../../styles/spacing";
-import { globalStyles } from "../../styles/globalStyles";
-import { NoteForm } from "../../components/forms/NoteForm";
-import { permissionsService } from "../../services/permissionsService";
-import { cameraService } from "../../services/cameraService";
-import { locationService } from "../../services/locationService";
-import { FormLoadingState } from "../../components/forms/FormLoadingState";
+
 import { NetworkSnackbar } from "../../components/common/NetworkSnackbar";
 import { SavingToast } from "../../components/common/SavingToast";
+import { FormLoadingState } from "../../components/forms/FormLoadingState";
+import { NoteForm } from "../../components/forms/NoteForm";
+import { useNoteFormValidation } from "../../hooks/useNoteFormValidation";
+import { useNotes } from "../../hooks/useNotes";
+import { useOfflineIntegration } from "../../hooks/useOfflineIntegration";
+import { useTheme } from "../../hooks/useTheme";
+import { cameraService } from "../../services/cameraService";
+import { locationService } from "../../services/locationService";
+import { permissionsService } from "../../services/permissionsService";
+import { globalStyles } from "../../styles/globalStyles";
+import { spacing } from "../../styles/spacing";
 
 export function AddNoteScreen() {
   const navigation = useNavigation();
@@ -32,7 +33,7 @@ export function AddNoteScreen() {
   const { theme, themeStyles } = useTheme();
   const { createNote, updateNote, getNote, loading, error, saving } =
     useNotes();
-  const { isOffline } = useOfflineIntegration();
+  useOfflineIntegration();
   const { errors, validateForm, clearError } = useNoteFormValidation();
 
   const noteId = (route.params as any)?.noteId;

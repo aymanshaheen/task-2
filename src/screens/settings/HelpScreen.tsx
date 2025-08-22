@@ -1,11 +1,12 @@
 import React from "react";
 import { SafeAreaView, View, Text, Linking, StyleSheet } from "react-native";
+
+import { Card } from "../../components/common/Card";
+import { SectionTitle } from "../../components/common/SectionTitle";
 import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { Card } from "../../components/common/Card";
-import { SectionTitle } from "../../components/common/SectionTitle";
 
 export function HelpScreen() {
   const { themeStyles } = useTheme();

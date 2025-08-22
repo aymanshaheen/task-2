@@ -1,11 +1,12 @@
+import { useRoute, useNavigation } from "@react-navigation/native";
 import React, { useMemo, useLayoutEffect, useEffect, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
-import { useRoute, useNavigation } from "@react-navigation/native";
+
+import { NoteDetailsCard } from "../../components/notes/NoteDetailsCard";
 import { useNotes } from "../../hooks/useNotes";
 import { useTheme } from "../../hooks/useTheme";
 import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
-import { NoteDetailsCard } from "../../components/notes/NoteDetailsCard";
 
 type RouteParams = { id: string };
 

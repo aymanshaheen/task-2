@@ -5,6 +5,7 @@ export interface Note {
   tags: string[];
   isFavorite: boolean;
   isPublic?: boolean;
+  author?: string;
   createdAt: string;
   updatedAt: string;
   userId: string;

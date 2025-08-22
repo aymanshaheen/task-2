@@ -20,4 +20,3 @@ export const spacing = {
   s92: 92,
 } as const;
 
-export type SpacingToken = keyof typeof spacing;

@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
+
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { useTheme } from "../../hooks/useTheme";
 
 interface ValidationError {
   field: string;
@@ -19,7 +20,6 @@ interface ValidationMessagesProps {
 export function ValidationMessages({
   errors,
   visible,
-  onDismiss,
 }: ValidationMessagesProps) {
   const { themeStyles } = useTheme();
   const c = themeStyles.colors;

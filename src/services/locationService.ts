@@ -1,4 +1,11 @@
-import * as Location from "expo-location";
+// Defer heavy module load to calls
+let Location: any;
+async function getLocationModule() {
+  if (!Location) {
+    Location = await import("expo-location");
+  }
+  return Location;
+}
 
 export type SimpleLocation = {
   latitude: number;
@@ -22,7 +29,8 @@ function formatAddressLine(
 export const locationService = {
   async getCurrentLocation(): Promise<SimpleLocation | null> {
     try {
-      const { coords } = await Location.getCurrentPositionAsync({});
+      const L = await getLocationModule();
+      const { coords } = await L.getCurrentPositionAsync({});
       return { latitude: coords.latitude, longitude: coords.longitude };
     } catch (e) {
       return null;
@@ -38,7 +46,8 @@ export const locationService = {
     city?: string;
   } | null> {
     try {
-      const results = await Location.reverseGeocodeAsync({
+      const L = await getLocationModule();
+      const results = await L.reverseGeocodeAsync({
         latitude,
         longitude,
       });
@@ -102,7 +111,8 @@ export const locationService = {
         }
       }
 
-      const results = await Location.geocodeAsync(trimmed);
+      const L = await getLocationModule();
+      const results = await L.geocodeAsync(trimmed);
       const limited = results.slice(0, 5);
       const enriched: Array<{
         latitude: number;

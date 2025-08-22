@@ -1,22 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
-import { FormField } from "./FormField";
-import { FavoriteToggle } from "./FavoriteToggle";
-import { PublicToggle } from "./PublicToggle";
-import { FormActions } from "./FormActions";
-import { ErrorText } from "../common/ErrorText";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
+import { locationService } from "../../services/locationService";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { locationService } from "../../services/locationService";
-import { useNavigation } from "@react-navigation/native";
+import { ErrorText } from "../common/ErrorText";
+
+import { FavoriteToggle } from "./FavoriteToggle";
+import { FormActions } from "./FormActions";
+import { FormField } from "./FormField";
+import { PublicToggle } from "./PublicToggle";
+
 
 interface NoteFormProps {
   title: string;
@@ -166,6 +162,7 @@ export function NoteForm({
                     borderRadius: spacing.s6,
                     backgroundColor: c.surface,
                   }}
+                  resizeMode="cover"
                 />
                 {onRemovePhoto && (
                   <TouchableOpacity
@@ -345,5 +342,3 @@ export function NoteForm({
     </View>
   );
 }
-
-const styles = StyleSheet.create({});

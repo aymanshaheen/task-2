@@ -1,9 +1,10 @@
 import React from "react";
 import { View, Text, Switch, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
+import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { globalStyles } from "../../styles/globalStyles";
 
 interface PublicToggleProps {
   value: boolean;
@@ -40,6 +41,10 @@ export function PublicToggle({
 }
 
 const styles = StyleSheet.create({
+  description: {
+    fontSize: typography.size.sm,
+    marginTop: spacing.s4,
+  },
   inputGroup: {
     marginBottom: spacing.s20,
   },
@@ -48,13 +53,9 @@ const styles = StyleSheet.create({
     fontWeight: typography.weight.medium,
     marginBottom: spacing.s8,
   },
-  description: {
-    fontSize: typography.size.sm,
-    marginTop: spacing.s4,
-  },
   row: {
-    flexDirection: "row",
     alignItems: "center",
+    flexDirection: "row",
     gap: spacing.s16,
   },
 });

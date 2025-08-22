@@ -1,27 +1,27 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { SafeAreaView, View, Text, StatusBar } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useTheme } from "../../hooks/useTheme";
-import { useNotes } from "../../hooks/useNotes";
-import type { Note } from "../../hooks/useNotes";
-import { useSearch } from "../../hooks/useSearch";
-import { globalStyles } from "../../styles/globalStyles";
-import { spacing } from "../../styles/spacing";
-import { SearchBar } from "../../components/common/SearchBar";
+import React, { useMemo, useEffect } from "react";
+import { SafeAreaView, View, StatusBar } from "react-native";
+
 import { EmptyState } from "../../components/common/EmptyState";
-import { NotesList } from "../../components/notes/NotesList";
-import { LoadingState } from "../../components/common/LoadingState";
 import { ErrorText } from "../../components/common/ErrorText";
 import { FloatingActionButton } from "../../components/common/FloatingActionButton";
+import { LoadingState } from "../../components/common/LoadingState";
 import { NetworkSnackbar } from "../../components/common/NetworkSnackbar";
 import { SavingToast } from "../../components/common/SavingToast";
+import { SearchBar } from "../../components/common/SearchBar";
+import { NotesList } from "../../components/notes/NotesList";
+import type { Note } from "../../hooks/useNotes";
+import { useNotes } from "../../hooks/useNotes";
+import { useSearch } from "../../hooks/useSearch";
+import { useTheme } from "../../hooks/useTheme";
+import { globalStyles } from "../../styles/globalStyles";
+import { spacing } from "../../styles/spacing";
 
 export function SearchScreen() {
   const navigation = useNavigation();
   const { theme, themeStyles } = useTheme();
   const {
     notes,
-    createNote,
     updateNote,
     deleteNote,
     togglePin,
@@ -29,7 +29,6 @@ export function SearchScreen() {
     error,
     loading,
     saving,
-    isOffline,
   } = useNotes();
 
   const { query, setQuery, filteredNotes } = useSearch(notes);

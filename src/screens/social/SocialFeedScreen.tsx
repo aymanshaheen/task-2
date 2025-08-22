@@ -1,11 +1,12 @@
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { View } from "react-native";
+
+import { FeedList } from "../../components/social/FeedList";
+import { FeedSortBar } from "../../components/social/FeedSortBar";
+import { useSocialFeed } from "../../hooks/useSocialFeed";
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
-import { useNavigation } from "@react-navigation/native";
-import { FeedSortBar } from "../../components/social/FeedSortBar";
-import { FeedList } from "../../components/social/FeedList";
-import { useSocialFeed } from "../../hooks/useSocialFeed";
 
 export function SocialFeedScreen() {
   const { themeStyles } = useTheme();

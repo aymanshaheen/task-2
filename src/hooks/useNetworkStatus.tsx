@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
 import NetInfo, {
   NetInfoState,
   NetInfoStateType,
 } from "@react-native-community/netinfo";
+import React, { useState, useEffect, useCallback } from "react";
 
 export interface NetworkStatus {
   isConnected: boolean;
@@ -21,7 +21,7 @@ export interface NetworkStatus {
 
 export interface NetworkActions {
   refresh: () => Promise<void>;
-  checkReachability: (url?: string) => Promise<boolean>;
+  checkReachability: () => Promise<boolean>;
 }
 
 const DEFAULT_NETWORK_STATUS: NetworkStatus = {
@@ -121,20 +121,17 @@ export function useNetworkStatus(): NetworkStatus &
     }
   }, [updateNetworkStatus]);
 
-  const checkReachability = useCallback(
-    async (url: string = "https://www.google.com"): Promise<boolean> => {
-      try {
-        const isReachable = await NetInfo.fetch().then(
-          (state) => state.isInternetReachable
-        );
-        return isReachable === true;
-      } catch (error) {
-        console.warn("Failed to check reachability:", error);
-        return false;
-      }
-    },
-    []
-  );
+  const checkReachability = useCallback(async (): Promise<boolean> => {
+    try {
+      const isReachable = await NetInfo.fetch().then(
+        (state) => state.isInternetReachable
+      );
+      return isReachable === true;
+    } catch (error) {
+      console.warn("Failed to check reachability:", error);
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
     // Configure NetInfo with balanced settings
@@ -242,13 +239,11 @@ export function useNetworkAware() {
     if (isOffline !== previouslyOffline) {
       if (previouslyOffline && !isOffline) {
         // Just came back online
-        console.log("🟢 Network restored - coming back online");
         setJustCameOnline(true);
         setJustWentOffline(false);
         setTimeout(() => setJustCameOnline(false), 5000);
       } else if (!previouslyOffline && isOffline) {
         // Just went offline
-        console.log("🔴 Network lost - going offline");
         setJustWentOffline(true);
         setJustCameOnline(false);
         setTimeout(() => setJustWentOffline(false), 5000);

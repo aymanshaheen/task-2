@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { useTheme } from "../../hooks/useTheme";
+
 import { useNetworkStatus, useIsOffline } from "../../hooks/useNetworkStatus";
+import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 
@@ -105,24 +106,24 @@ export function OfflineIndicator({
 
 const styles = StyleSheet.create({
   container: {
+    alignItems: "center",
+    borderRadius: spacing.s8,
+    borderWidth: 1,
+    marginBottom: spacing.s8,
     paddingHorizontal: spacing.s16,
     paddingVertical: spacing.s8,
-    marginBottom: spacing.s8,
-    borderRadius: spacing.s8,
-    alignItems: "center",
-    borderWidth: 1,
-  },
-  text: {
-    fontSize: typography.size.sm,
-    textAlign: "center",
-    fontWeight: "600",
-    color: "#ffffff",
   },
   subText: {
+    color: "#ffffff",
     fontSize: typography.size.xs,
-    textAlign: "center",
     marginTop: 2,
     opacity: 0.9,
+    textAlign: "center",
+  },
+  text: {
     color: "#ffffff",
+    fontSize: typography.size.sm,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

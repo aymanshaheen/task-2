@@ -1,15 +1,16 @@
+import { useNavigation, useRoute } from "@react-navigation/native";
 import React, { useEffect } from "react";
 import { SafeAreaView, View, Text } from "react-native";
-import { useAuth } from "../../hooks/useAuth";
-import { useTheme } from "../../hooks/useTheme";
-import { globalStyles } from "../../styles/globalStyles";
-import { spacing } from "../../styles/spacing";
+
 import { Card } from "../../components/common/Card";
+import { ProfileActions } from "../../components/profile/ProfileActions";
 import { ProfileHeader } from "../../components/profile/ProfileHeader";
 import { ProfileInfo } from "../../components/profile/ProfileInfo";
-import { ProfileActions } from "../../components/profile/ProfileActions";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useAuth } from "../../hooks/useAuth";
+import { useTheme } from "../../hooks/useTheme";
 import { cameraService } from "../../services/cameraService";
+import { globalStyles } from "../../styles/globalStyles";
+import { spacing } from "../../styles/spacing";
 
 export function ProfileScreen() {
   const { user, updateUser } = useAuth();

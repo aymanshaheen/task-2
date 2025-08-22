@@ -403,7 +403,7 @@ export function useAuthFormValidation(formType: "login" | "signup") {
     };
 
     const metRequirements = Object.values(requirements).filter(Boolean).length;
-    let feedback: string[] = [];
+    const feedback: string[] = [];
 
     if (formData.password.length === 0) {
       feedback.push("Enter a password");

@@ -6,9 +6,11 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { useAsyncStorage } from "./useAsyncStorage";
-import * as authService from "../services/authService";
+
 import { AuthUser, AuthSession, AuthError } from "../models/auth";
+import { authEvents } from "../services/authEvents";
+import * as authService from "../services/authService";
+import { useAsyncStorage } from "./useAsyncStorage";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -190,6 +192,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clearSession]);
 
+  useEffect(() => {
+    const unsubscribe = authEvents.onUnauthorized(async () => {
+      try {
+        await logout();
+      } catch {}
+    });
+    return () => unsubscribe();
+  }, [logout]);
+
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
       const newToken = await authService.refreshAuthToken();
@@ -298,36 +309,4 @@ export function useAuth(): AuthContextValue {
   }
 
   return context;
-}
-
-export function useAuthGuard() {
-  const auth = useAuth();
-
-  const requireAuth = useCallback(
-    (redirectCallback?: () => void) => {
-      if (!auth.isAuthenticated && !auth.loading && !auth.initializing) {
-        redirectCallback?.();
-        return false;
-      }
-      return true;
-    },
-    [auth.isAuthenticated, auth.loading, auth.initializing]
-  );
-
-  const requireGuest = useCallback(
-    (redirectCallback?: () => void) => {
-      if (auth.isAuthenticated && !auth.loading) {
-        redirectCallback?.();
-        return false;
-      }
-      return true;
-    },
-    [auth.isAuthenticated, auth.loading]
-  );
-
-  return {
-    ...auth,
-    requireAuth,
-    requireGuest,
-  };
 }

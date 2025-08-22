@@ -2,7 +2,6 @@
   "expo": {
     "name": "task 2",
     "slug": "task-2",
-    "entryPoint": "./index.ts",
     "scheme": "task-2",
     "version": "1.0.0",
     "orientation": "portrait",

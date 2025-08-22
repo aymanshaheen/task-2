@@ -1,15 +1,16 @@
+import { useRoute } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { useTheme } from "../../hooks/useTheme";
-import { spacing } from "../../styles/spacing";
-import { typography } from "../../styles/typography";
-import { useAuth } from "../../hooks/useAuth";
-import { locationService } from "../../services/locationService";
-import { permissionsService } from "../../services/permissionsService";
-import { useNavigation, useRoute } from "@react-navigation/native";
+
 import { LocationActionButtons } from "../../components/profile/LocationActionButtons";
 import { LocationSummary } from "../../components/profile/LocationSummary";
 import { PrimaryBottomButton } from "../../components/profile/PrimaryBottomButton";
+import { useAuth } from "../../hooks/useAuth";
+import { useTheme } from "../../hooks/useTheme";
+import { locationService } from "../../services/locationService";
+import { permissionsService } from "../../services/permissionsService";
+import { spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 export function ProfileLocationScreen({ navigation }: any) {
   const { themeStyles } = useTheme();

@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
-import { typography } from "../../styles/typography";
 import { spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 type Props = {
   message: string;
@@ -20,9 +21,9 @@ export const EmptyState: React.FC<Props> = ({ message }) => {
 
 const styles = StyleSheet.create({
   emptyState: {
+    alignItems: "center",
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
     paddingHorizontal: spacing.s24,
   },
   emptyStateText: {

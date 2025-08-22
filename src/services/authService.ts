@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ErrorType } from "../enums/auth";
 import {
   User,
   AuthResponse,
@@ -6,7 +7,8 @@ import {
   RegisterCredentials,
   AuthError,
 } from "../models/auth";
-import { ErrorType } from "../enums/auth";
+
+import { authEvents } from "./authEvents";
 
 const API_BASE_URL =
   "https://react-native-lessons-api-production.up.railway.app/api";
@@ -61,6 +63,16 @@ async function makeRequest<T>(
         message: errorData.message || `HTTP Error: ${response.status}`,
         statusCode: response.status,
       };
+
+      if (response.status === 401 || response.status === 403) {
+        try {
+          authEvents.emitUnauthorized({
+            status: response.status,
+            message: error.message,
+            source: "authService",
+          });
+        } catch {}
+      }
 
       throw error;
     }
@@ -194,28 +206,6 @@ export async function getAuthToken(): Promise<string | null> {
     return null;
   } catch (error) {
     console.error("Failed to get auth token:", error);
-    return null;
-  }
-}
-
-export async function getStoredUser(): Promise<User | null> {
-  try {
-    const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
-    if (userData) {
-      return JSON.parse(userData);
-    }
-
-    try {
-      const { storageService } = await import("./storageService");
-      const user = await storageService.getItem<User>("AUTH", "user");
-      if (user) return user;
-    } catch (storageError) {
-      console.warn("Failed to get user from storage service");
-    }
-
-    return null;
-  } catch (error) {
-    console.error("Failed to get stored user:", error);
     return null;
   }
 }

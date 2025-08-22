@@ -1,7 +1,8 @@
 import React from "react";
 import { Text } from "react-native";
-import { typography } from "../../styles/typography";
+
 import { spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 export function AuthTitle({ children }: { children: React.ReactNode }) {
   return (

@@ -1,9 +1,10 @@
 import React, { useMemo, useRef } from "react";
 import { View, Text, TouchableOpacity, Animated, Easing } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
+import { SocialFeedItem } from "../../services/socialService";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { SocialFeedItem } from "../../services/socialService";
 
 type Props = {
   item: SocialFeedItem;

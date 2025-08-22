@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StorageError, StorageOptions } from "../models/storage";
+
 import { StorageErrorType } from "../enums/storage";
+import { StorageError, StorageOptions } from "../models/storage";
 
 const STORAGE_NAMESPACES = {
   USER: "@user_",
@@ -245,11 +246,27 @@ class StorageService {
   }
 
   private generateChecksum(data: any): string {
-    return btoa(JSON.stringify(data)).slice(0, 10);
+    // UTF-8 safe deterministic hash to avoid base64 issues with non-ASCII characters
+    const input = JSON.stringify(data);
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) {
+      hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+    }
+    return hash.toString(16);
   }
 
   private verifyChecksum(data: any, expectedChecksum: string): boolean {
-    return this.generateChecksum(data) === expectedChecksum;
+    // Support new checksum first
+    if (this.generateChecksum(data) === expectedChecksum) return true;
+    // Fallback: verify against legacy base64-based checksum for backward compatibility
+    try {
+      // Legacy method used plain btoa and sliced first 10 chars
+      // It fails for non-ASCII data; guard with try/catch
+
+      const legacy = btoa(JSON.stringify(data)).slice(0, 10);
+      if (legacy === expectedChecksum) return true;
+    } catch {}
+    return false;
   }
 
   private createStorageError(
@@ -322,11 +339,14 @@ export const cacheManager = {
     if (pattern) {
       try {
         const allKeys = await AsyncStorage.getAllKeys();
-        const cacheKeys = allKeys.filter(
-          (key) =>
-            key.includes(`${STORAGE_NAMESPACES.CACHE}:api_`) &&
-            key.includes(pattern)
-        );
+        const cacheKeys = allKeys.filter((key) => {
+          // Keys are stored as `${STORAGE_NAMESPACES.CACHE}api_${endpoint}`
+          // Example: "@cache_api_notes_{...}"
+          const cachePrefix = `${STORAGE_NAMESPACES.CACHE}api_`;
+          if (!key.startsWith(cachePrefix)) return false;
+          // Match either the raw pattern or the pattern prefixed by "api_"
+          return key.includes(`api_${pattern}`) || key.includes(pattern);
+        });
 
         if (cacheKeys.length > 0) {
           await AsyncStorage.multiRemove(cacheKeys);
@@ -348,6 +368,33 @@ export const cacheManager = {
 
   async getDraft(draftId: string): Promise<any> {
     return storageService.getItem("TEMP", `draft_${draftId}`);
+  },
+
+  async setApiMeta(
+    endpoint: string,
+    meta: { etag?: string; lastModified?: string }
+  ): Promise<void> {
+    await storageService.setItem("CACHE", `meta_${endpoint}`, meta, {
+      ttl: STORAGE_CONFIG.DEFAULT_TTL,
+    });
+  },
+
+  async getApiMeta(
+    endpoint: string
+  ): Promise<{ etag?: string; lastModified?: string } | null> {
+    return storageService.getItem("CACHE", `meta_${endpoint}`);
+  },
+
+  async updateCachedApiResponse<T>(
+    endpoint: string,
+    updater: (oldData: T | null) => T,
+    ttl?: number
+  ): Promise<void> {
+    const oldData = await storageService.getItem<T>("CACHE", `api_${endpoint}`);
+    const newData = updater(oldData);
+    await storageService.setItem("CACHE", `api_${endpoint}`, newData, {
+      ttl: ttl || STORAGE_CONFIG.DEFAULT_TTL,
+    });
   },
 };
 

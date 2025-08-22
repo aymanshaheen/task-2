@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { StorageErrorType } from "../enums/storage";
 import {
   StorageError,
   UseAsyncStorageOptions,
-  StorageMetadata,
   StorageWrapper,
 } from "../models/storage";
-import { StorageErrorType } from "../enums/storage";
 
 export function useAsyncStorage<T>(
   key: string,

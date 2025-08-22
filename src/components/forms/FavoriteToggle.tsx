@@ -1,9 +1,10 @@
 import React from "react";
 import { View, Text, Switch, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
+import { globalStyles } from "../../styles/globalStyles";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { globalStyles } from "../../styles/globalStyles";
 
 interface FavoriteToggleProps {
   value: boolean;
@@ -40,6 +41,15 @@ export function FavoriteToggle({
 }
 
 const styles = StyleSheet.create({
+  description: {
+    fontSize: typography.size.sm,
+    marginTop: spacing.s4,
+  },
+  favoriteRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s16,
+  },
   inputGroup: {
     marginBottom: spacing.s20,
   },
@@ -47,14 +57,5 @@ const styles = StyleSheet.create({
     fontSize: typography.size.md,
     fontWeight: typography.weight.medium,
     marginBottom: spacing.s8,
-  },
-  description: {
-    fontSize: typography.size.sm,
-    marginTop: spacing.s4,
-  },
-  favoriteRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.s16,
   },
 });

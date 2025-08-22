@@ -1,15 +1,18 @@
+import Constants from "expo-constants";
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { Platform } from "react-native";
-import { useAsyncStorage } from "./useAsyncStorage";
+
 import { notificationService } from "../services/notificationService";
+
+import { useAsyncStorage } from "./useAsyncStorage";
+
 
 type NotificationPayload = {
   type?: string;
@@ -59,7 +62,7 @@ export function NotificationCenterProvider({
   const registerIfEnabled = useCallback(async () => {
     if (!notificationsEnabled) return;
     try {
-      // Use dynamic import so Metro doesn't try to resolve it if unavailable
+      if (Constants?.appOwnership === "expo") return;
       const Notifications: any = await import("expo-notifications").catch(
         () => null
       );
@@ -69,6 +72,7 @@ export function NotificationCenterProvider({
         getPermissionsAsync,
         requestPermissionsAsync,
         getExpoPushTokenAsync,
+        getDevicePushTokenAsync,
         setNotificationChannelAsync,
       } = Notifications as any;
 
@@ -87,8 +91,26 @@ export function NotificationCenterProvider({
         });
       }
 
-      const tokenResp = await getExpoPushTokenAsync({ projectId: undefined });
-      const token = tokenResp?.data;
+      let token: string | null = null;
+      try {
+        const deviceTokenResp =
+          typeof getDevicePushTokenAsync === "function"
+            ? await getDevicePushTokenAsync()
+            : null;
+        const possibleTokenValues = [
+          deviceTokenResp?.data,
+          (deviceTokenResp as any)?.token,
+          (deviceTokenResp as any)?.devicePushToken,
+        ].filter(Boolean);
+        if (possibleTokenValues.length > 0) {
+          token = String(possibleTokenValues[0]);
+        }
+      } catch {}
+
+      if (!token) {
+        const tokenResp = await getExpoPushTokenAsync({ projectId: undefined });
+        token = tokenResp?.data || null;
+      }
       if (token && token !== storedToken) {
         await notificationService.registerDevice(
           token,
@@ -96,8 +118,7 @@ export function NotificationCenterProvider({
         );
         await setStoredToken(token);
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }, [notificationsEnabled, setStoredToken, storedToken]);
 
   useEffect(() => {
@@ -105,6 +126,7 @@ export function NotificationCenterProvider({
     let sub2: any = null;
     (async () => {
       try {
+        if (Constants?.appOwnership === "expo") return;
         const Notifications: any = await import("expo-notifications").catch(
           () => null
         );
@@ -139,8 +161,7 @@ export function NotificationCenterProvider({
             }
           } catch {}
         });
-      } catch (e) {
-      }
+      } catch (e) {}
     })();
 
     return () => {

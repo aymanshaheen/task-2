@@ -7,11 +7,13 @@ import {
   NativeSyntheticEvent,
   TextInputEndEditingEventData,
   TextInputSubmitEditingEventData,
+  Platform,
 } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
-import { ErrorText } from "../common/ErrorText";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { ErrorText } from "../common/ErrorText";
 
 interface FormFieldProps {
   label: string;
@@ -74,7 +76,9 @@ export function FormField({
         editable={!disabled}
         maxLength={maxLength}
         multiline={multiline}
-        textAlignVertical={multiline ? "top" : "center"}
+        {...(Platform.OS === "android"
+          ? { textAlignVertical: multiline ? "top" : "center" }
+          : {})}
         onEndEditing={onEndEditing}
         onSubmitEditing={onSubmitEditing}
       />
@@ -89,6 +93,11 @@ export function FormField({
 }
 
 const styles = StyleSheet.create({
+  charCount: {
+    fontSize: typography.size.xs,
+    marginTop: spacing.s4,
+    textAlign: "right",
+  },
   inputGroup: {
     marginBottom: spacing.s20,
   },
@@ -97,24 +106,21 @@ const styles = StyleSheet.create({
     fontWeight: typography.weight.medium,
     marginBottom: spacing.s8,
   },
+  textAreaInput: {
+    borderRadius: spacing.s8,
+    borderWidth: StyleSheet.hairlineWidth,
+    fontSize: typography.size.md,
+    lineHeight: Math.round(typography.size.md * 1.4),
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+  },
   textInput: {
+    borderRadius: spacing.s8,
+    borderWidth: StyleSheet.hairlineWidth,
     fontSize: typography.size.lg,
     fontWeight: typography.weight.medium,
+    lineHeight: Math.round(typography.size.lg * 1.3),
     paddingHorizontal: spacing.s16,
     paddingVertical: spacing.s12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: spacing.s8,
-  },
-  textAreaInput: {
-    fontSize: typography.size.md,
-    paddingHorizontal: spacing.s16,
-    paddingVertical: spacing.s12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: spacing.s8,
-  },
-  charCount: {
-    fontSize: typography.size.xs,
-    textAlign: "right",
-    marginTop: spacing.s4,
   },
 });

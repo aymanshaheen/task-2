@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -49,26 +50,26 @@ export function FormActions({
 }
 
 const styles = StyleSheet.create({
+  button: {
+    alignItems: "center",
+    borderRadius: spacing.s8,
+    flex: 1,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+  },
   buttonContainer: {
     flexDirection: "row",
     gap: spacing.s12,
     marginTop: spacing.s24,
   },
-  button: {
-    flex: 1,
-    paddingVertical: spacing.s12,
-    paddingHorizontal: spacing.s16,
-    borderRadius: spacing.s8,
-    alignItems: "center",
+  buttonText: {
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.medium,
   },
   cancelButton: {
     borderWidth: StyleSheet.hairlineWidth,
   },
   saveButton: {
     backgroundColor: "#007AFF",
-  },
-  buttonText: {
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.medium,
   },
 });

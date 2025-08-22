@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { WebView } from "react-native-webview";
-import { useTheme } from "../../hooks/useTheme";
-import { locationService } from "../../services/locationService";
+
 import { MapConfirmBar } from "../../components/map/MapConfirmBar";
 import { MapTipBanner } from "../../components/map/MapTipBanner";
+import { useTheme } from "../../hooks/useTheme";
+import { locationService } from "../../services/locationService";
 
 type Coordinates = { latitude: number; longitude: number };
 

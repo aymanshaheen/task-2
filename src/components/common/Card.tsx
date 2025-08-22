@@ -1,8 +1,9 @@
 import React from "react";
 import { View } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
-import { spacing } from "../../styles/spacing";
 import { globalStyles } from "../../styles/globalStyles";
+import { spacing } from "../../styles/spacing";
 
 export function Card({
   children,

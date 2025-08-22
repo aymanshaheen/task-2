@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Switch } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -15,7 +16,7 @@ export function SettingsToggleCard({
   value: boolean;
   onValueChange: (v: boolean) => void;
 }) {
-  const { themeStyles, theme, toggleTheme } = useTheme();
+  const { themeStyles } = useTheme();
   return (
     <View
       style={[

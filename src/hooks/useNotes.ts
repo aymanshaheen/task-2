@@ -1,15 +1,17 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
-import { notesService } from "../services/notesService";
-import { cacheManager } from "../services/storageService";
-import { useSyncManager } from "../services/syncManager";
-import { useAuth } from "./useAuth";
-import { useNetworkAware, useIsOffline } from "./useNetworkStatus";
+
 import {
   Note,
   CreateNoteData,
   UpdateNoteData,
   NotesError,
 } from "../models/notes";
+import { notesService } from "../services/notesService";
+import { cacheManager } from "../services/storageService";
+import { useSyncManager } from "../services/syncManager";
+
+import { useAuth } from "./useAuth";
+import { useNetworkAware, useIsOffline } from "./useNetworkStatus";
 
 export type { Note };
 
@@ -22,22 +24,25 @@ type NewNote = Pick<Note, "title" | "content"> & {
   location?: { latitude: number; longitude: number; address?: string };
 };
 
-export function useNotes() {
+export function useNotes(options?: { autoLoad?: boolean }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [favorites, setFavorites] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [pageOffset, setPageOffset] = useState(0);
+  const PAGE_SIZE = 15;
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<NotesError | null>(null);
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const networkStatus = useNetworkAware();
   const isOffline = useIsOffline();
   const { syncStatus, performManualSync, startAutoSync } = useSyncManager(
     user?.id || null
   );
 
-  // Update network status for services only when it actually changes
   const prevOfflineRef = useRef<boolean | undefined>(undefined);
   useEffect(() => {
     if (prevOfflineRef.current !== isOffline) {
@@ -53,11 +58,44 @@ export function useNotes() {
     try {
       setError(null);
 
-      const response = await notesService.getNotes();
+      const response = await notesService.getNotes({
+        limit: PAGE_SIZE,
+        offset: 0,
+      });
       const loadedNotes = response?.notes || [];
+      setHasMore(
+        Boolean(response?.hasMore) ||
+          (response?.total ?? 0) > loadedNotes.length
+      );
+      setPageOffset(loadedNotes.length);
 
       if (loadedNotes.length > 0) {
         setNotes(loadedNotes);
+        // Prefetch next page in background
+        (async () => {
+          try {
+            if (
+              response?.hasMore ||
+              (response?.total ?? 0) > loadedNotes.length
+            ) {
+              const nextResp = await notesService.getNotes({
+                limit: PAGE_SIZE,
+                offset: loadedNotes.length,
+              });
+              const next = nextResp?.notes || [];
+              if (next.length > 0) {
+                setNotes((prev) => [...prev, ...next]);
+                setPageOffset(loadedNotes.length + next.length);
+                setHasMore(
+                  Boolean(nextResp?.hasMore) ||
+                    (typeof nextResp?.total === "number"
+                      ? loadedNotes.length + next.length < nextResp.total
+                      : next.length === PAGE_SIZE)
+                );
+              }
+            }
+          } catch {}
+        })();
       } else {
         if (!isOffline) {
           setNotes([]);
@@ -73,6 +111,17 @@ export function useNotes() {
     } catch (err: any) {
       console.error("Failed to load notes:", err);
 
+      if (
+        err?.type === "AUTHENTICATION_ERROR" ||
+        err?.status === 401 ||
+        err?.statusCode === 401
+      ) {
+        try {
+          await logout();
+        } catch {}
+        return;
+      }
+
       if (!isOffline) {
         setError(err);
         setNotes([]);
@@ -84,6 +133,38 @@ export function useNotes() {
       setLoading(false);
     }
   }, [user?.id, isOffline]);
+
+  const loadMore = useCallback(async () => {
+    if (!user?.id) return;
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const response = await notesService.getNotes({
+        limit: PAGE_SIZE,
+        offset: pageOffset,
+      });
+      const next = response?.notes || [];
+      setNotes((prev) => [...prev, ...next]);
+      const newOffset = pageOffset + next.length;
+      setPageOffset(newOffset);
+      const total =
+        typeof response?.total === "number" ? response.total : undefined;
+      setHasMore(
+        Boolean(response?.hasMore) ||
+          (typeof total === "number"
+            ? newOffset < total
+            : next.length === PAGE_SIZE)
+      );
+    } catch (err: any) {
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user?.id, loadingMore, hasMore, pageOffset]);
+
+  const togglePin = useCallback(async (_noteId: string) => {
+    // Not implemented in model; keep as a no-op for API compatibility
+    return Promise.resolve();
+  }, []);
 
   const loadFavorites = useCallback(async () => {
     if (!user?.id) return;
@@ -122,11 +203,13 @@ export function useNotes() {
     }
   }, [user?.id]);
 
+  const autoLoad = options?.autoLoad !== false;
   useEffect(() => {
+    if (!autoLoad) return;
     if (user?.id) {
       loadNotes();
     }
-  }, [user?.id, loadNotes]);
+  }, [user?.id, loadNotes, autoLoad]);
 
   const refreshNotes = useCallback(async () => {
     if (!user?.id) return;
@@ -187,7 +270,6 @@ export function useNotes() {
     }
   }, [user?.id, loadNotes]);
 
-  // Handle network changes with debounced actions - only when there's a real change
   const networkTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
@@ -214,7 +296,6 @@ export function useNotes() {
     }
   }, [networkStatus.justWentOffline, handleNetworkLoss]);
 
-  // Start auto-sync when user is available and online - with conservative triggering
   const prevAutoSyncStateRef = useRef<
     { userId?: string; isOffline: boolean } | undefined
   >(undefined);
@@ -222,7 +303,6 @@ export function useNotes() {
     const currentState = { userId: user?.id, isOffline };
     const prevState = prevAutoSyncStateRef.current;
 
-    // Only start auto-sync if the state actually changed and we should sync
     if (
       user?.id &&
       !isOffline &&
@@ -258,7 +338,6 @@ export function useNotes() {
         needsSync: true,
       };
 
-      // Add optimistic note immediately
       setNotes((prev) => [optimisticNote, ...(prev || [])]);
 
       try {
@@ -275,11 +354,9 @@ export function useNotes() {
 
         const newNote = await notesService.createNote(noteData, user.id);
 
-        // Replace optimistic note with the real note immediately
         setNotes((prev) =>
           prev
             .map((n) => {
-              // Check for both optimistic ID and potential local ID match
               if (n && (n.id === optimisticNote.id || n.isLocalOnly)) {
                 return newNote;
               }
@@ -295,7 +372,6 @@ export function useNotes() {
         console.error("Failed to create note:", err);
         setError(err);
 
-        // Remove optimistic note on failure
         setNotes((prev) => prev.filter((n) => n && n.id !== optimisticNote.id));
       } finally {
         setSaving(false);
@@ -312,7 +388,6 @@ export function useNotes() {
       try {
         setError(null);
 
-        // Optimistic update
         setNotes((prev) =>
           prev
             .map((n) => (n && n.id === noteId ? { ...n, ...updates } : n))
@@ -341,7 +416,6 @@ export function useNotes() {
         );
       } catch (err: any) {
         setError(err);
-        // Revert optimistic update on error
         await loadNotes();
       } finally {
         setSaving(false);
@@ -358,8 +432,6 @@ export function useNotes() {
       try {
         setError(null);
 
-        // Optimistic update for both notes and favorites
-        const noteToDelete = notes.find((n) => n && n.id === noteId);
         setNotes((prev) => prev.filter((n) => n && n.id !== noteId));
         setFavorites((prev) => prev.filter((n) => n && n.id !== noteId));
 
@@ -518,16 +590,20 @@ export function useNotes() {
     notes: sortedNotes,
     favorites: filteredFavorites,
     loadNotes,
+    loadMore,
     loadFavorites,
     createNote,
     updateNote,
     deleteNote,
     toggleFavorite,
+    togglePin,
     refreshNotes,
     refreshFavorites,
     tags,
     error,
     loading,
+    loadingMore,
+    hasMore,
     refreshing,
     saving,
     isOffline,

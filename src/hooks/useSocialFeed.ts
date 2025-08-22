@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { useAuth } from "./useAuth";
-import { useNotificationCenter } from "./useNotificationCenter";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { SortKey } from "../enums/social";
 import { notificationService } from "../services/notificationService";
 import { socialService, SocialFeedItem } from "../services/socialService";
-import { SortKey } from "../enums/social";
+
+import { useAuth } from "./useAuth";
+import { useNotificationCenter } from "./useNotificationCenter";
+
 
 type UseSocialFeedResult = {
   feed: SocialFeedItem[];

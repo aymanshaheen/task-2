@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { View, Text } from "react-native";
+
+import { PreferenceToggleButton } from "../../components/profile/PreferenceToggleButton";
+import { PrimaryBottomButton } from "../../components/profile/PrimaryBottomButton";
+import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { useAuth } from "../../hooks/useAuth";
-import { PreferenceToggleButton } from "../../components/profile/PreferenceToggleButton";
-import { PrimaryBottomButton } from "../../components/profile/PrimaryBottomButton";
 
 export function ProfilePreferencesScreen({ navigation }: any) {
   const { themeStyles } = useTheme();

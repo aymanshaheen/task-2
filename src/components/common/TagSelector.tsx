@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+
 import { useTheme } from "../../hooks/useTheme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -12,8 +13,7 @@ type Props = {
 
 export const TagSelector = memo(
   ({ availableTags, selectedTags, onChangeSelected }: Props) => {
-    const { theme, themeStyles } = useTheme();
-    const isDark = theme === "dark";
+    const { themeStyles } = useTheme();
     const c = themeStyles.colors;
     const toggle = (tag: string) => {
       if (selectedTags.includes(tag)) {
@@ -57,6 +57,17 @@ export const TagSelector = memo(
 );
 
 const styles = StyleSheet.create({
+  chip: {
+    borderRadius: spacing.s16,
+    borderWidth: 1,
+    paddingHorizontal: spacing.s10,
+    paddingVertical: spacing.s6,
+  },
+  chipSelected: {},
+  chipText: {
+    fontSize: typography.size.sm,
+  },
+  chipTextSelected: {},
   container: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -64,15 +75,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.s12,
     paddingVertical: spacing.s8,
   },
-  chip: {
-    borderWidth: 1,
-    paddingHorizontal: spacing.s10,
-    paddingVertical: spacing.s6,
-    borderRadius: spacing.s16,
-  },
-  chipSelected: {},
-  chipText: {
-    fontSize: typography.size.sm,
-  },
-  chipTextSelected: {},
 });

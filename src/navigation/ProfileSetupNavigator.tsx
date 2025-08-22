@@ -1,11 +1,12 @@
-import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
+
 import { useTheme } from "../hooks/useTheme";
-import { typography } from "../styles/typography";
-import { spacing } from "../styles/spacing";
+import { MapPickerScreen } from "../screens/common/MapPickerScreen";
 import { ProfileLocationScreen } from "../screens/profile/ProfileLocationScreen";
 import { ProfilePreferencesScreen } from "../screens/profile/ProfilePreferencesScreen";
-import { MapPickerScreen } from "../screens/common/MapPickerScreen";
+import { spacing } from "../styles/spacing";
+import { typography } from "../styles/typography";
 
 export type ProfileSetupStackParamList = {
   ProfileLocation: undefined;
